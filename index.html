@@ -54,24 +54,26 @@
   .btn-csv:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
   .info-tag{display:inline-block;background:rgba(79,209,197,0.1);color:var(--accent);font-family:'DM Mono',monospace;font-size:10px;padding:1px 6px;border-radius:3px;margin-left:4px;}
   /* Right panel */
-  .right-panel{flex:1;overflow:auto;padding:20px;}
-  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+  .right-panel{flex:1;overflow:hidden;padding:20px;display:flex;flex-direction:column;}
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;flex-shrink:0;}
   .kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;position:relative;overflow:hidden;}
   .kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent-color,var(--accent));}
   .kpi-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-family:'DM Mono',monospace;}
   .kpi-value{font-family:'DM Serif Display',serif;font-size:20px;margin-top:5px;color:var(--accent-color,var(--accent));}
   .kpi-sub{font-size:10px;color:var(--muted);margin-top:2px;font-family:'DM Mono',monospace;}
-  .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
-  .table-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+  .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;min-height:0;flex:1;}
+  .table-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;flex-shrink:0;}
   .table-header h3{font-family:'DM Serif Display',serif;font-size:16px;color:var(--text);}
   .table-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
   .legend{display:flex;gap:12px;flex-wrap:wrap;}
   .legend-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;}
   .legend-dot{width:9px;height:9px;border-radius:2px;}
+  /* Table Container */
+  #tableContainer{overflow-x:auto;overflow-y:auto;flex:1;min-height:0;}
   /* Table */
   table{width:100%;border-collapse:collapse;}
   thead tr{background:var(--surface2);}
-  thead th{padding:8px 10px;text-align:right;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:0.5px;font-weight:500;white-space:nowrap;border-bottom:1px solid var(--border);}
+  thead th{padding:8px 10px;text-align:right;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:0.5px;font-weight:500;white-space:nowrap;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface2);z-index:10;}
   thead th:first-child{text-align:center;}
   thead th.grp{text-align:center;border-bottom:2px solid;font-size:10px;}
   tbody tr{border-bottom:1px solid rgba(42,48,80,0.4);transition:filter 0.1s;}
@@ -99,9 +101,10 @@
   .empty-state{text-align:center;padding:60px 40px;color:var(--muted);}
   .empty-state .icon{font-size:42px;margin-bottom:12px;opacity:0.4;}
   .empty-state h3{font-family:'DM Serif Display',serif;font-size:18px;color:var(--text);margin-bottom:6px;}
-  ::-webkit-scrollbar{width:5px;height:5px;}
+  ::-webkit-scrollbar{width:10px;height:10px;}
   ::-webkit-scrollbar-track{background:var(--bg);}
-  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:5px;}
+  ::-webkit-scrollbar-thumb:hover{background:var(--accent);}
 </style>
 </head>
 <body>
@@ -469,7 +472,7 @@ function renderKPIs(rows,cpfLifePayout,cpfLifeAge,raAtCpfLife,raDepletedAge,reti
 // ── TABLE ──
 function renderTable(rows,retireAge,cpfLifeAge) {
   const dash='<span style="color:var(--muted)">—</span>';
-  const html=`<div style="overflow-x:auto;"><table>
+  const html=`<table>
     <thead>
       <tr>
         <th rowspan="2">Age</th><th rowspan="2">Phase</th>
@@ -523,7 +526,7 @@ function renderTable(rows,retireAge,cpfLifeAge) {
         </tr>`;
       }).join('')}
     </tbody>
-  </table></div>`;
+  </table>`;
   document.getElementById('tableContainer').innerHTML=html;
 }
 
