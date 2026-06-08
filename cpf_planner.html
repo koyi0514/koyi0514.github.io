@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CPF Retirement Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0f1117;--surface:#181c27;--surface2:#1f2438;--border:#2a3050;
+    --accent:#4fd1c5;--accent2:#f6ad55;--accent3:#fc8181;--accent4:#68d391;
+    --text:#e2e8f0;--muted:#718096;--gold:#d4af37;
+    --working:#2d4a3e;--working-text:#68d391;
+    --pre55:#252d40;--pre55-text:#a78bfa;
+    --pre65:#2d3a4a;--pre65-text:#63b3ed;
+    --post65:#2d2a1e;--post65-text:#f6ad55;
+    --depleted:#3a1f1f;--depleted-text:#fc8181;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;min-height:100vh;}
+  header{background:linear-gradient(135deg,#0f1117 0%,#1a1f35 50%,#0f1117 100%);border-bottom:1px solid var(--border);padding:20px 32px;position:relative;overflow:hidden;}
+  header::before{content:'';position:absolute;top:-50%;left:-10%;width:400px;height:400px;background:radial-gradient(circle,rgba(79,209,197,0.08) 0%,transparent 70%);pointer-events:none;}
+  header h1{font-family:'DM Serif Display',serif;font-size:26px;color:var(--accent);}
+  header p{color:var(--muted);font-size:12px;margin-top:3px;font-family:'DM Mono',monospace;}
+  .main{display:flex;gap:0;min-height:calc(100vh - 74px);}
+  .sidebar{width:350px;min-width:350px;background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;padding:20px;}
+  .section-title{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+  .input-group{margin-bottom:12px;}
+  .input-group label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:500;}
+  .input-group input,.input-group select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:6px;font-family:'DM Mono',monospace;font-size:13px;transition:border-color 0.2s;outline:none;}
+  .input-group input:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(79,209,197,0.1);}
+  .input-row{display:flex;gap:8px;}
+  .input-row .input-group{flex:1;}
+  /* RA Box */
+  .ra-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:4px;display:none;}
+  .ra-box.visible{display:block;}
+  .ra-info{font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.6;}
+  .ra-info span{color:var(--accent2);font-family:'DM Mono',monospace;}
+  .ra-slider{width:100%;accent-color:var(--accent);cursor:pointer;margin:6px 0 2px;}
+  .ra-range-hint{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:10px;}
+  .ra-fields{display:flex;gap:8px;margin-top:6px;}
+  .ra-fields > div{flex:1;}
+  .ra-fields label{display:block;font-size:10px;color:var(--muted);margin-bottom:3px;}
+  .ra-fields .ra-input{width:100%;background:var(--bg);border:1px solid var(--accent);color:var(--accent);padding:7px 10px;border-radius:6px;font-family:'DM Mono',monospace;font-size:13px;font-weight:500;outline:none;}
+  .ra-fields .ra-input:focus{box-shadow:0 0 0 2px rgba(79,209,197,0.2);}
+  .oa-display{background:var(--bg);border:1px solid var(--border);color:var(--accent4);padding:7px 10px;border-radius:6px;font-family:'DM Mono',monospace;font-size:13px;font-weight:500;}
+  /* Buttons */
+  .section-divider{margin:16px 0 12px;}
+  .btn{border:none;padding:10px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.2s;}
+  .btn-primary{width:100%;background:linear-gradient(135deg,var(--accent),#38b2ac);color:#0f1117;margin-top:6px;}
+  .btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(79,209,197,0.3);}
+  .btn-csv{background:rgba(246,173,85,0.15);color:var(--accent2);border:1px solid rgba(246,173,85,0.3);}
+  .btn-csv:hover{background:rgba(246,173,85,0.25);transform:translateY(-1px);}
+  .btn-csv:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
+  .info-tag{display:inline-block;background:rgba(79,209,197,0.1);color:var(--accent);font-family:'DM Mono',monospace;font-size:10px;padding:1px 6px;border-radius:3px;margin-left:4px;}
+  /* Right panel */
+  .right-panel{flex:1;overflow:auto;padding:20px;}
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+  .kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;position:relative;overflow:hidden;}
+  .kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent-color,var(--accent));}
+  .kpi-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-family:'DM Mono',monospace;}
+  .kpi-value{font-family:'DM Serif Display',serif;font-size:20px;margin-top:5px;color:var(--accent-color,var(--accent));}
+  .kpi-sub{font-size:10px;color:var(--muted);margin-top:2px;font-family:'DM Mono',monospace;}
+  .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+  .table-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+  .table-header h3{font-family:'DM Serif Display',serif;font-size:16px;color:var(--text);}
+  .table-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;}
+  .legend-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;}
+  .legend-dot{width:9px;height:9px;border-radius:2px;}
+  /* Table */
+  table{width:100%;border-collapse:collapse;}
+  thead tr{background:var(--surface2);}
+  thead th{padding:8px 10px;text-align:right;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:0.5px;font-weight:500;white-space:nowrap;border-bottom:1px solid var(--border);}
+  thead th:first-child{text-align:center;}
+  thead th.grp{text-align:center;border-bottom:2px solid;font-size:10px;}
+  tbody tr{border-bottom:1px solid rgba(42,48,80,0.4);transition:filter 0.1s;}
+  tbody tr:hover{filter:brightness(1.18);}
+  tbody td{padding:8px 10px;text-align:right;font-family:'DM Mono',monospace;font-size:11px;white-space:nowrap;}
+  tbody td:first-child{text-align:center;font-weight:600;}
+  td.phase{text-align:center;font-size:10px;}
+  tr.pre55{background:var(--pre55);}tr.pre55 td{color:var(--pre55-text);}
+  tr.working{background:var(--working);}tr.working td{color:var(--working-text);}tr.working td:first-child{background:rgba(104,211,145,0.15);}
+  tr.pre65{background:var(--pre65);}tr.pre65 td{color:var(--pre65-text);}
+  tr.post65{background:var(--post65);}tr.post65 td{color:var(--post65-text);}
+  tr.depleted{background:var(--depleted);}tr.depleted td{color:var(--depleted-text);}
+  tr.milestone{outline:2px solid var(--accent);outline-offset:-1px;}
+  td.hi{color:var(--accent)!important;font-weight:500;}
+  td.zero{color:var(--muted)!important;}
+  .divider-row td{text-align:center!important;font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);padding:5px 10px;background:#1a2540;border-top:2px solid var(--accent);border-bottom:2px solid var(--accent);}
+  /* FRS display */
+  .frs-display{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:12px;}
+  .frs-row{display:flex;justify-content:space-between;gap:8px;margin-top:6px;}
+  .frs-item .lbl{font-size:10px;color:var(--muted);margin-bottom:2px;}
+  .frs-item .val{font-family:'DM Mono',monospace;font-size:14px;font-weight:500;}
+  /* Error */
+  .error-msg{background:rgba(252,129,129,0.1);border:1px solid rgba(252,129,129,0.3);color:var(--accent3);padding:8px 12px;border-radius:6px;font-size:12px;margin-bottom:12px;display:none;}
+  .error-msg.visible{display:block;}
+  .empty-state{text-align:center;padding:60px 40px;color:var(--muted);}
+  .empty-state .icon{font-size:42px;margin-bottom:12px;opacity:0.4;}
+  .empty-state h3{font-family:'DM Serif Display',serif;font-size:18px;color:var(--text);margin-bottom:6px;}
+  ::-webkit-scrollbar{width:5px;height:5px;}
+  ::-webkit-scrollbar-track{background:var(--bg);}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>CPF Retirement Planner</h1>
+  <p>Singapore · Interactive Projection · Current Age → 90</p>
+</header>
+
+<div class="main">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="section-title">Personal Details</div>
+    <div class="input-row">
+      <div class="input-group"><label>Current Age</label><input type="number" id="currentAge" value="54" min="30" max="64" oninput="updateRASlider()"></div>
+      <div class="input-group"><label>Retire At Age</label><input type="number" id="retireAge" value="55" min="55" max="75"></div>
+    </div>
+
+    <div class="section-divider"><div class="section-title">CPF Balances (Today)</div></div>
+    <div class="input-group"><label>Special Account (SA) $</label><input type="number" id="currentSA" value="240000" step="1000" oninput="updateRASlider()"></div>
+    <div class="input-group"><label>Ordinary Account (OA) $</label><input type="number" id="currentOA" value="400000" step="1000" oninput="updateRASlider()"></div>
+    <div class="input-group"><label>Cash on Hand $</label><input type="number" id="currentCash" value="350000" step="1000"></div>
+
+    <div class="section-divider"><div class="section-title">Salary <span class="info-tag">3% p.a.</span></div></div>
+    <div class="input-group"><label>Current Monthly Salary $ (0 if not working)</label><input type="number" id="currentSalary" value="0" step="500"></div>
+    <div class="input-group"><label>Monthly Cash Savings from Salary $</label><input type="number" id="cashSavings" value="2000" step="100"></div>
+
+    <div class="section-divider"><div class="section-title">RA Allocation at Age 55</div></div>
+    <div id="raEligibilityMsg" style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.6;"></div>
+    <div class="ra-box" id="raBox">
+      <div class="ra-info" id="raInfo"></div>
+      <input type="range" class="ra-slider" id="raSlider" min="0" max="1" step="1000" oninput="onSliderMove()">
+      <div class="ra-range-hint"><span id="raMinLabel">Min (FRS)</span><span id="raMaxLabel">Max (ERS)</span></div>
+      <div class="ra-fields">
+        <div>
+          <label>RA Allocation $</label>
+          <input type="number" class="ra-input" id="raInput" step="1000" placeholder="Type amount" oninput="onRAInputType()">
+        </div>
+        <div>
+          <label>OA Leftover (withdrawable) $</label>
+          <div class="oa-display" id="oaLeftoverDisplay">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"><div class="section-title">Withdrawal Settings</div></div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">OA Drawdown</div>
+    <div class="input-row">
+      <div class="input-group"><label>Start Age</label><input type="number" id="oaStartAge" value="65" min="55" max="90"></div>
+      <div class="input-group"><label>Monthly Amount $</label><input type="number" id="oaMonthly" value="1500" step="100"></div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;margin-top:4px;">Cash Drawdown</div>
+    <div class="input-row">
+      <div class="input-group"><label>Start Age</label><input type="number" id="cashStartAge" value="55" min="30" max="90"></div>
+      <div class="input-group"><label>Monthly Amount $</label><input type="number" id="cashMonthly" value="2000" step="100"></div>
+    </div>
+
+    <div class="section-divider"><div class="section-title">CPF Assumptions <span class="info-tag">editable</span></div></div>
+    <div class="input-row">
+      <div class="input-group"><label>Base FRS 2026 $</label><input type="number" id="frsBase" value="220500" step="1000" oninput="updateRASlider()"></div>
+      <div class="input-group"><label>FRS Growth % p.a.</label><input type="number" id="frsGrowth" value="3.5" step="0.5" min="0" max="10" oninput="updateRASlider()"></div>
+    </div>
+    <div class="frs-display">
+      <div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;letter-spacing:1px;">PROJECTED AT AGE 55</div>
+      <div class="frs-row">
+        <div class="frs-item"><div class="lbl">BRS (½ FRS)</div><div class="val" id="brsAt55" style="color:var(--accent4)">—</div></div>
+        <div class="frs-item"><div class="lbl">FRS (min RA)</div><div class="val" id="frsAt55" style="color:var(--accent2)">—</div></div>
+        <div class="frs-item"><div class="lbl">ERS (max RA)</div><div class="val" id="ersAt55" style="color:var(--accent)">—</div></div>
+      </div>
+    </div>
+    <div class="input-row">
+      <div class="input-group"><label>RA Rate % (base)</label><input type="number" id="raRate" value="4" step="0.1" min="0" max="10" oninput="updateRASlider()"></div>
+      <div class="input-group"><label>OA Rate % (base)</label><input type="number" id="oaRate" value="2.5" step="0.1" min="0" max="10"></div>
+    </div>
+    <div class="input-row">
+      <div class="input-group"><label>Payout Rate ($ per $1k RA)</label><input type="number" id="payoutRate" value="5.75" step="0.05"></div>
+      <div class="input-group"><label>CPF LIFE Start Age</label><input type="number" id="cpfLifeAge" value="65" min="65" max="70"></div>
+    </div>
+
+    <div id="errorMsg" class="error-msg"></div>
+    <button class="btn btn-primary" onclick="calculate()">▶ Calculate Projection</button>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <div id="kpiSection" style="display:none;"><div class="kpi-grid" id="kpiGrid"></div></div>
+    <div class="table-wrap">
+      <div class="table-header">
+        <h3>Year-by-Year Projection</h3>
+        <div class="table-actions">
+          <div class="legend">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--pre55-text)"></div>Pre-55</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--working-text)"></div>Working</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--pre65-text)"></div>Pre-CPF LIFE</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--post65-text)"></div>CPF LIFE</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--depleted-text)"></div>RA Depleted</div>
+          </div>
+          <button class="btn btn-csv" id="csvBtn" onclick="exportCSV()" disabled>⬇ Export CSV</button>
+        </div>
+      </div>
+      <div id="tableContainer">
+        <div class="empty-state">
+          <div class="icon">📊</div>
+          <h3>Enter your details to begin</h3>
+          <p>Fill in your CPF balances and preferences, then click Calculate.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let lastRows = [], lastCpfLifePayout = 0, lastCpfLifeAge = 65;
+let _raTotal = 0, _raMin = 0, _raMax = 0;
+
+function getOARate(age) {
+  if (age < 60) return 0.24;
+  if (age < 65) return 0.185;
+  if (age < 70) return 0.105;
+  return 0.075;
+}
+
+function fmt(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  if (n === 0) return '$0';
+  return '$' + Math.round(n).toLocaleString();
+}
+function fmtNum(n) {
+  if (n === null || n === undefined || isNaN(n)) return '';
+  return Math.round(n);
+}
+
+function getProjectedFRS() {
+  const base = parseFloat(document.getElementById('frsBase').value) || 213000;
+  const growth = (parseFloat(document.getElementById('frsGrowth').value) || 3.5) / 100;
+  const age = parseFloat(document.getElementById('currentAge').value) || 54;
+  return base * Math.pow(1 + growth, Math.max(0, 55 - age));
+}
+
+// ── RA SLIDER + INPUT SYNC ──
+function updateRASlider() {
+  const sa = parseFloat(document.getElementById('currentSA').value) || 0;
+  const oa = parseFloat(document.getElementById('currentOA').value) || 0;
+  const currentAge = parseFloat(document.getElementById('currentAge').value) || 54;
+  const raR = (parseFloat(document.getElementById('raRate').value) || 4) / 100;
+  const oaR = (parseFloat(document.getElementById('oaRate').value) || 2.5) / 100;
+  const frs = getProjectedFRS();
+  const ers = frs * 2;
+
+  document.getElementById('frsAt55').textContent = fmt(frs);
+  document.getElementById('ersAt55').textContent = fmt(ers);
+  document.getElementById('brsAt55').textContent = fmt(frs / 2);
+
+  const yrs = Math.max(0, 55 - currentAge);
+  _raTotal = sa * Math.pow(1+raR,yrs) + oa * Math.pow(1+oaR,yrs);
+  _raMin = Math.min(frs, _raTotal);
+  _raMax = Math.min(ers, _raTotal);
+
+  const raBox = document.getElementById('raBox');
+  const msgEl = document.getElementById('raEligibilityMsg');
+
+  if (_raTotal <= frs) {
+    msgEl.innerHTML = `<span style="color:var(--accent4)">✓</span> Projected SA+OA at 55 (<span style="color:var(--accent);font-family:'DM Mono',monospace">${fmt(_raTotal)}</span>) ≤ FRS — full amount goes to RA automatically.`;
+    raBox.classList.remove('visible');
+  } else {
+    msgEl.innerHTML = `Projected SA+OA at 55: <span style="color:var(--accent);font-family:'DM Mono',monospace">${fmt(_raTotal)}</span> — exceeds FRS. Set RA allocation:`;
+    raBox.classList.add('visible');
+    document.getElementById('raInfo').innerHTML = `Slide or type an amount between FRS and ERS:`;
+    const sl = document.getElementById('raSlider');
+    sl.min = _raMin; sl.max = _raMax; sl.step = 1000;
+    document.getElementById('raMinLabel').textContent = `FRS min: ${fmt(_raMin)}`;
+    document.getElementById('raMaxLabel').textContent = `ERS max: ${fmt(_raMax)}`;
+    // Only reset if current value is out of range
+    const cur = parseFloat(document.getElementById('raInput').value);
+    if (isNaN(cur) || cur < _raMin || cur > _raMax) {
+      setRAValue(_raMax);
+    } else {
+      setRAValue(cur);
+    }
+  }
+}
+
+function setRAValue(val) {
+  val = Math.round(Math.max(_raMin, Math.min(_raMax, val)));
+  document.getElementById('raSlider').value = val;
+  document.getElementById('raInput').value = val;
+  document.getElementById('oaLeftoverDisplay').textContent = fmt(_raTotal - val);
+}
+
+function onSliderMove() {
+  setRAValue(parseFloat(document.getElementById('raSlider').value));
+}
+
+function onRAInputType() {
+  const val = parseFloat(document.getElementById('raInput').value);
+  if (!isNaN(val)) setRAValue(val);
+}
+
+function getRAAllocation() {
+  const raBox = document.getElementById('raBox');
+  if (!raBox.classList.contains('visible')) return null; // use totalAt55 auto
+  const v = parseFloat(document.getElementById('raInput').value);
+  return isNaN(v) ? _raMax : Math.max(_raMin, Math.min(_raMax, v));
+}
+
+// ── CALCULATE ──
+function calculate() {
+  const currentAge  = parseInt(document.getElementById('currentAge').value);
+  const retireAge   = parseInt(document.getElementById('retireAge').value);
+  const currentSA   = parseFloat(document.getElementById('currentSA').value) || 0;
+  const currentOA   = parseFloat(document.getElementById('currentOA').value) || 0;
+  const currentCash = parseFloat(document.getElementById('currentCash').value) || 0;
+  const currentSalary = parseFloat(document.getElementById('currentSalary').value) || 0;
+  const cashSavingsAmt = parseFloat(document.getElementById('cashSavings').value) || 0;
+  const oaStartAge  = parseInt(document.getElementById('oaStartAge').value);
+  const oaMonthly   = parseFloat(document.getElementById('oaMonthly').value) || 0;
+  const cashStartAge= parseInt(document.getElementById('cashStartAge').value);
+  const cashMonthly = parseFloat(document.getElementById('cashMonthly').value) || 0;
+  const frs         = getProjectedFRS();
+  const ers         = frs * 2;
+  const raR         = (parseFloat(document.getElementById('raRate').value) || 4) / 100;
+  const oaR         = (parseFloat(document.getElementById('oaRate').value) || 2.5) / 100;
+  const payoutRate  = parseFloat(document.getElementById('payoutRate').value) || 5.75;
+  const cpfLifeAge  = parseInt(document.getElementById('cpfLifeAge').value) || 65;
+
+  const errEl = document.getElementById('errorMsg');
+  errEl.classList.remove('visible');
+  if (currentAge >= 55) { errEl.textContent='Current age must be below 55.'; errEl.classList.add('visible'); return; }
+  if (retireAge < 55)   { errEl.textContent='Retire age must be 55 or above.'; errEl.classList.add('visible'); return; }
+  if (cpfLifeAge<65||cpfLifeAge>70) { errEl.textContent='CPF LIFE start age must be 65–70.'; errEl.classList.add('visible'); return; }
+
+  let sa=currentSA, oa=currentOA, cash=currentCash, salary=currentSalary;
+  let ra=0, raFormed=false;
+  let raDepletedAge=null, cpfLifePayout=0, raAtCpfLife=0;
+  // Store RA formation details for divider note
+  let ra55note = '';
+  const rows = [];
+
+  for (let age = currentAge; age <= 90; age++) {
+    const pre55 = age < 55;
+    const is55  = age === 55;
+    const working = salary > 0 && age < retireAge;
+    const postCpfLife = age >= cpfLifeAge;
+
+    // ── PRE-55 ──
+    if (pre55) {
+      const saOpen=sa, oaOpen=oa, cashOpen=cash;
+      const saInt = Math.min(saOpen,30000)*(raR+0.02)+Math.max(Math.min(saOpen,60000)-30000,0)*(raR+0.01)+Math.max(saOpen-60000,0)*raR;
+      const oaCon = working ? salary*12*getOARate(age) : 0;
+      const oaBase= oaOpen+oaCon;
+      const oaInt = Math.min(oaBase,20000)*(oaR+0.01)+Math.max(oaBase-20000,0)*oaR;
+      const saClose=saOpen+saInt, oaClose=oaBase+oaInt;
+      const cSave  = working ? cashSavingsAmt*12 : 0;
+      const cWdraw = (!working&&age>=cashStartAge) ? Math.min(cashMonthly*12,cashOpen+cSave) : 0;
+      const cashClose=Math.max(cashOpen+cSave-cWdraw,0);
+      const mIncome = working ? salary : (age>=cashStartAge ? Math.min(cashMonthly,(cashOpen+cSave)/12) : 0);
+      const cWdrawMth = (!working&&age>=cashStartAge) ? Math.min(cashMonthly,(cashOpen+cSave)/12) : 0;
+      rows.push({age,pre55:true,working,postCpfLife:false,raDepleted:false,
+        saOpen,saInt,saClose,
+        raOpen:null,raInt:null,raPayout:null,raClose:null,
+        oaOpen,oaCon,oaInt,oaClose,
+        oaWdrawMth:0,
+        cashOpen,cashClose,cWdrawMth,
+        cpfPayout:0,mIncome,nw:saClose+oaClose+cashClose,salary:working?salary:0,note:''});
+      sa=saClose; oa=oaClose; cash=cashClose;
+      if (working) salary*=1.03;
+      continue;
+    }
+
+    // ── AT 55: RA FORMATION (runs once) ──
+    if (is55 && !raFormed) {
+      raFormed=true;
+      const total55=sa+oa;
+      let ra55,oaLeft;
+      if (total55<=frs) {
+        ra55=total55; oaLeft=0;
+      } else {
+        const alloc = getRAAllocation();
+        ra55 = alloc !== null ? Math.max(frs,Math.min(alloc,Math.min(ers,total55))) : Math.min(total55,ers);
+        oaLeft = total55-ra55;
+      }
+      ra55note = `SA+OA at 55: ${fmt(sa+oa)}  →  RA allocated: ${fmt(ra55)}  |  OA withdrawable: ${fmt(oaLeft)}`;
+      ra=ra55; oa=oaLeft; sa=0;
+    }
+
+    // ── AGE 55+ ──
+    const raOpen=ra, oaOpen=oa, cashOpen=cash;
+
+    // RA interest (tiered, no contributions after 55)
+    const raInt = raOpen>0
+      ? Math.min(raOpen,30000)*(raR+0.02)+Math.max(Math.min(raOpen,60000)-30000,0)*(raR+0.01)+Math.max(raOpen-60000,0)*raR
+      : 0;
+
+    // Fix CPF LIFE payout at cpfLifeAge based on RA opening that year
+    if (age===cpfLifeAge) { raAtCpfLife=raOpen; cpfLifePayout=(raAtCpfLife/1000)*payoutRate; }
+
+    // Deduct annual payout from RA
+    const raPayout = postCpfLife ? Math.min(cpfLifePayout*12, Math.max(raOpen+raInt,0)) : 0;
+    const raClose  = Math.max(raOpen+raInt-raPayout,0);
+    if (postCpfLife&&raClose===0&&raDepletedAge===null&&raOpen>0) raDepletedAge=age;
+    const raDepleted = postCpfLife&&raClose===0&&raOpen===0;
+
+    // OA
+    const oaCon   = working ? salary*12*getOARate(age) : 0;
+    const oaBase  = oaOpen+oaCon;
+    const oaInt   = Math.min(oaBase,20000)*(oaR+0.01)+Math.max(oaBase-20000,0)*oaR;
+    const oaAvail = oaBase+oaInt;
+    const oaWdraw = age>=oaStartAge ? Math.min(oaMonthly*12,oaAvail) : 0;
+    const oaClose = Math.max(oaAvail-oaWdraw,0);
+    const oaWdrawMth = age>=oaStartAge ? Math.min(oaMonthly,oaAvail/12) : 0;
+
+    // Cash
+    const cSave   = working ? cashSavingsAmt*12 : 0;
+    const cWdraw  = (!working&&age>=cashStartAge) ? Math.min(cashMonthly*12,cashOpen+cSave) : 0;
+    const cashClose=Math.max(cashOpen+cSave-cWdraw,0);
+    const cWdrawMth=(!working&&age>=cashStartAge) ? Math.min(cashMonthly,(cashOpen+cSave)/12) : 0;
+
+    // Monthly income
+    let mIncome=0;
+    if (working) { mIncome=salary; }
+    else {
+      if (postCpfLife) mIncome+=cpfLifePayout;
+      if (age>=oaStartAge) mIncome+=oaWdrawMth;
+      if (age>=cashStartAge) mIncome+=cWdrawMth;
+    }
+
+    rows.push({age,pre55:false,working,postCpfLife,raDepleted,
+      saOpen:null,saInt:null,saClose:null,
+      raOpen,raInt,raPayout,raClose,
+      oaOpen,oaCon,oaInt,oaClose,
+      oaWdrawMth,
+      cashOpen,cashClose,cWdrawMth,
+      cpfPayout:postCpfLife?cpfLifePayout:0,
+      mIncome,nw:raClose+oaClose+cashClose,
+      salary:working?salary:0,
+      note: is55 ? ra55note : ''});
+
+    ra=raClose; oa=oaClose; cash=cashClose;
+    if (working) salary*=1.03;
+  }
+
+  lastRows=rows; lastCpfLifePayout=cpfLifePayout; lastCpfLifeAge=cpfLifeAge;
+  document.getElementById('csvBtn').disabled=false;
+  renderKPIs(rows,cpfLifePayout,cpfLifeAge,raAtCpfLife,raDepletedAge,retireAge);
+  renderTable(rows,retireAge,cpfLifeAge);
+}
+
+// ── KPIs ──
+function renderKPIs(rows,cpfLifePayout,cpfLifeAge,raAtCpfLife,raDepletedAge,retireAge) {
+  document.getElementById('kpiSection').style.display='block';
+  const r90=rows.find(r=>r.age===90);
+  const kpis=[
+    {label:'CPF LIFE Monthly',value:fmt(cpfLifePayout),sub:`From age ${cpfLifeAge}, for life`,color:'#4fd1c5'},
+    {label:`RA at Age ${cpfLifeAge}`,value:fmt(raAtCpfLife),sub:'Payout basis',color:'#f6ad55'},
+    {label:'RA Depletes At',value:raDepletedAge?`Age ${raDepletedAge}`:'Age 90+',sub:raDepletedAge?'CPF LIFE continues':'Still active at 90',color:raDepletedAge?'#fc8181':'#68d391'},
+    {label:'Net Worth at 90',value:fmt(r90?.nw),sub:'RA + OA + Cash',color:'#b794f4'},
+  ];
+  document.getElementById('kpiGrid').innerHTML=kpis.map(k=>`
+    <div class="kpi-card" style="--accent-color:${k.color}">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.value}</div>
+      <div class="kpi-sub">${k.sub}</div>
+    </div>`).join('');
+}
+
+// ── TABLE ──
+function renderTable(rows,retireAge,cpfLifeAge) {
+  const dash='<span style="color:var(--muted)">—</span>';
+  const html=`<div style="overflow-x:auto;"><table>
+    <thead>
+      <tr>
+        <th rowspan="2">Age</th><th rowspan="2">Phase</th>
+        <th colspan="3" class="grp" style="color:#a78bfa;border-color:#a78bfa">SA (pre-55 only)</th>
+        <th colspan="4" class="grp" style="color:var(--accent);border-color:var(--accent)">RA (from 55)</th>
+        <th colspan="4" class="grp" style="color:var(--accent2);border-color:var(--accent2)">OA</th>
+        <th colspan="2" class="grp" style="color:var(--accent4);border-color:var(--accent4)">CASH</th>
+        <th colspan="5" class="grp" style="color:var(--gold);border-color:var(--gold)">INCOME & TOTALS</th>
+      </tr>
+      <tr>
+        <th>Open</th><th>Interest</th><th>Close</th>
+        <th>Open</th><th>Interest</th><th>Payout Drawn</th><th>Close</th>
+        <th>Open</th><th>Contribution</th><th>Interest</th><th>Close</th>
+        <th>Open</th><th>Close</th>
+        <th>CPF LIFE/mth</th><th>OA/mth</th><th>Cash/mth</th><th>Total/mth</th><th>Net Worth</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rows.map(r=>{
+        let cls = r.pre55?(r.working?'working':'pre55'):r.working?'working':!r.postCpfLife?'pre65':r.raDepleted?'depleted':'post65';
+        if (r.age===55||r.age===cpfLifeAge) cls+=' milestone';
+        const phase = r.pre55&&r.working?`Working<br><small>pre-55</small>`
+          :r.pre55?`Pre-55<br><small>accumulating</small>`
+          :r.working?`Working<br><small>${r.age<60?'55–60':r.age<65?'60–65':'65+'}</small>`
+          :!r.postCpfLife?`Retired<br><small>pre-${cpfLifeAge}</small>`
+          :r.raDepleted?`CPF LIFE<br><small style="color:var(--accent3)">RA depleted</small>`
+          :`CPF LIFE<br><small>active</small>`;
+        const raClose = r.pre55?dash:r.raDepleted?'<span style="color:var(--accent3);font-size:10px">DEPLETED</span>':fmt(r.raClose);
+        const divider = r.note?`<tr class="divider-row"><td colspan="20">⬆ PRE-55 ACCUMULATION &nbsp;|&nbsp; ${r.note} &nbsp;|&nbsp; AGE 55 BELOW ⬇</td></tr>`:'';
+        return `${divider}<tr class="${cls}">
+          <td>${r.age}</td>
+          <td class="phase">${phase}</td>
+          <td>${r.pre55?fmt(r.saOpen):dash}</td>
+          <td>${r.pre55?fmt(r.saInt):dash}</td>
+          <td>${r.pre55?fmt(r.saClose):dash}</td>
+          <td class="${!r.pre55?'hi':''}">${r.pre55?dash:fmt(r.raOpen)}</td>
+          <td>${r.pre55?dash:fmt(r.raInt)}</td>
+          <td>${r.raPayout>0?fmt(r.raPayout):'-'}</td>
+          <td class="${!r.pre55&&r.raClose===0&&r.postCpfLife?'zero':'hi'}">${raClose}</td>
+          <td>${fmt(r.oaOpen)}</td>
+          <td>${r.oaCon>0?fmt(r.oaCon):'-'}</td>
+          <td>${fmt(r.oaInt)}</td>
+          <td class="hi">${fmt(r.oaClose)}</td>
+          <td>${fmt(r.cashOpen)}</td>
+          <td class="hi">${fmt(r.cashClose)}</td>
+          <td>${r.cpfPayout>0?fmt(r.cpfPayout):'-'}</td>
+          <td>${r.oaWdrawMth>0?fmt(r.oaWdrawMth):'-'}</td>
+          <td>${r.cWdrawMth>0?fmt(r.cWdrawMth):'-'}</td>
+          <td style="color:var(--gold);font-weight:500">${fmt(r.mIncome)}</td>
+          <td style="color:var(--text);font-weight:500">${fmt(r.nw)}</td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table></div>`;
+  document.getElementById('tableContainer').innerHTML=html;
+}
+
+// ── CSV EXPORT ──
+function exportCSV() {
+  if (!lastRows.length) return;
+  const hdrs=['Age','Phase','SA Open','SA Interest','SA Close',
+    'RA Open','RA Interest','RA Payout Drawn','RA Close',
+    'OA Open','OA Contribution','OA Interest','OA Close',
+    'Cash Open','Cash Close',
+    'CPF LIFE Payout/mth','OA Withdrawal/mth','Cash Withdrawal/mth','Total Income/mth','Net Worth'];
+  const ph=(r)=>r.pre55&&r.working?'Working (pre-55)':r.pre55?'Pre-55 Accumulating':r.working?`Working ${r.age<60?'55-60':r.age<65?'60-65':'65+'}`:!r.postCpfLife?`Retired (pre-${lastCpfLifeAge})`:r.raDepleted?'CPF LIFE - RA Depleted':'CPF LIFE Active';
+  const lines=[hdrs.join(',')];
+  lastRows.forEach(r=>lines.push([
+    r.age,ph(r),
+    fmtNum(r.saOpen),fmtNum(r.saInt),fmtNum(r.saClose),
+    fmtNum(r.raOpen),fmtNum(r.raInt),fmtNum(r.raPayout),fmtNum(r.raClose),
+    fmtNum(r.oaOpen),fmtNum(r.oaCon),fmtNum(r.oaInt),fmtNum(r.oaClose),
+    fmtNum(r.cashOpen),fmtNum(r.cashClose),
+    fmtNum(r.cpfPayout),fmtNum(r.oaWdrawMth),fmtNum(r.cWdrawMth),fmtNum(r.mIncome),fmtNum(r.nw)
+  ].join(',')));
+  lines.push('','SUMMARY');
+  lines.push(`CPF LIFE Monthly Payout,${fmtNum(lastCpfLifePayout)}`);
+  const r90=lastRows.find(r=>r.age===90);
+  if(r90) lines.push(`Net Worth at 90,${fmtNum(r90.nw)}`);
+  const blob=new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`CPF_Projection_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+// ── INIT ──
+updateRASlider();
+calculate();
+</script>
+  <footer style="background:var(--surface);border-top:1px solid var(--border);padding:14px 32px;text-align:center;">
+    <p style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;line-height:1.7;max-width:900px;margin:0 auto;">
+      ⚠️ <strong style="color:var(--accent3)">DISCLAIMER</strong> &nbsp;—&nbsp;
+      This planner was built for <strong>personal reference use only</strong> and reflects my own assumptions and calculations.
+      It is <strong>not financial advice</strong> and has not been verified by any financial institution or authority.
+      CPF rules, interest rates, contribution rates, FRS/ERS figures, and payout estimates are subject to change by CPF Board at any time.
+      Anyone who uses this tool does so entirely <strong>at their own risk</strong>.
+      Always consult a qualified financial adviser or refer to the official
+      <a href="https://www.cpf.gov.sg" target="_blank" style="color:var(--accent);text-decoration:none;">CPF Board website</a>
+      for accurate and up-to-date information.
+    </p>
+  </footer>
+</body>
+</html>
