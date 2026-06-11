@@ -73,7 +73,7 @@
   /* Table */
   table{width:100%;border-collapse:collapse;}
   thead tr{background:var(--surface2);}
-  thead th{padding:8px 10px;text-align:right;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:0.5px;font-weight:500;white-space:nowrap;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface2);z-index:10;}
+  thead th{padding:8px 10px;text-align:right;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:0.5px;font-weight:500;white-space:nowrap;border-bottom:1px solid var(--border);}
   thead th:first-child{text-align:center;}
   thead th.grp{text-align:center;border-bottom:2px solid;font-size:10px;}
   tbody tr{border-bottom:1px solid rgba(42,48,80,0.4);transition:filter 0.1s;}
@@ -118,18 +118,18 @@
   <div class="sidebar">
     <div class="section-title">Personal Details</div>
     <div class="input-row">
-      <div class="input-group"><label>Current Age</label><input type="number" id="currentAge" value="54" min="30" max="64" oninput="updateRASlider()"></div>
+      <div class="input-group"><label>Current Age</label><input type="number" id="currentAge" value="50" min="30" max="64" oninput="updateRASlider()"></div>
       <div class="input-group"><label>Retire At Age</label><input type="number" id="retireAge" value="55" min="55" max="75"></div>
     </div>
 
     <div class="section-divider"><div class="section-title">CPF Balances (Today)</div></div>
-    <div class="input-group"><label>Special Account (SA) $</label><input type="number" id="currentSA" value="240000" step="1000" oninput="updateRASlider()"></div>
-    <div class="input-group"><label>Ordinary Account (OA) $</label><input type="number" id="currentOA" value="400000" step="1000" oninput="updateRASlider()"></div>
-    <div class="input-group"><label>Cash on Hand $</label><input type="number" id="currentCash" value="350000" step="1000"></div>
+    <div class="input-group"><label>Special Account (SA) $</label><input type="number" id="currentSA" value="250000" step="1000" oninput="updateRASlider()"></div>
+    <div class="input-group"><label>Ordinary Account (OA) $</label><input type="number" id="currentOA" value="300000" step="1000" oninput="updateRASlider()"></div>
+    <div class="input-group"><label>Cash on Hand $</label><input type="number" id="currentCash" value="300000" step="1000"></div>
 
     <div class="section-divider"><div class="section-title">Salary <span class="info-tag">3% p.a.</span></div></div>
     <div class="input-group"><label>Current Monthly Salary $ (0 if not working)</label><input type="number" id="currentSalary" value="0" step="500"></div>
-    <div class="input-group"><label>Monthly Cash Savings from Salary $</label><input type="number" id="cashSavings" value="2000" step="100"></div>
+    <div class="input-group"><label>Monthly Cash Savings from Salary $</label><input type="number" id="cashSavings" value="0" step="100"></div>
 
     <div class="section-divider"><div class="section-title">RA Allocation at Age 55</div></div>
     <div id="raEligibilityMsg" style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.6;"></div>
@@ -266,7 +266,7 @@ function updateRASlider() {
   const msgEl = document.getElementById('raEligibilityMsg');
 
   if (_raTotal <= frs) {
-    msgEl.innerHTML = `<span style="color:var(--accent4)">✓</span> Projected SA+OA at 55 (<span style="color:var(--accent);font-family:'DM Mono',monospace">${fmt(_raTotal)}</span>) ≤ FRS — you don't need RA allocation.`;
+    msgEl.innerHTML = `<span style="color:var(--accent4)">✓</span> Projected SA+OA at 55 (<span style="color:var(--accent);font-family:'DM Mono',monospace">${fmt(_raTotal)}</span>) ≤ FRS — auto-allocated to RA.`;
     raBox.classList.remove('visible');
   } else {
     msgEl.innerHTML = `Projected SA+OA at 55: <span style="color:var(--accent);font-family:'DM Mono',monospace">${fmt(_raTotal)}</span> — exceeds FRS. Set RA allocation:`;
@@ -538,7 +538,7 @@ function exportCSV() {
     'OA Open','OA Contribution','OA Interest','OA Close',
     'Cash Open','Cash Close',
     'CPF LIFE Payout/mth','OA Withdrawal/mth','Cash Withdrawal/mth','Total Income/mth','Net Worth'];
-  const ph=(r)=>r.pre55&&r.working?'Working (pre-55)':r.pre55?'Pre-55 Accumulating':r.working?`Working ${r.age<60?'55-60':r.age<65?'60-65':'65+'}`:!r.postCpfLife?`Retired (pre-${lastCpfLifeAge})`:r.raDepleted?'CPF LIFE (RA depleted)':'CPF LIFE (active)';
+  const ph=(r)=>r.pre55&&r.working?'Working (pre-55)':r.pre55?'Pre-55 Accumulating':r.working?`Working ${r.age<60?'55-60':r.age<65?'60-65':'65+'}`:!r.postCpfLife?`Retired (pre-${lastCpfLifeAge})`:(r.raDepleted?'CPF LIFE (RA depleted)':'CPF LIFE');
   const lines=[hdrs.join(',')];
   lastRows.forEach(r=>lines.push([
     r.age,ph(r),
