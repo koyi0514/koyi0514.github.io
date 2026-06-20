@@ -123,14 +123,14 @@
   <div class="sidebar">
     <div class="section-title">Personal Details</div>
     <div class="input-row">
-      <div class="input-group"><label>Current Age</label><input type="number" id="currentAge" value="50" min="30" max="64" oninput="updateRASlider()"></div>
+      <div class="input-group"><label>Current Age</label><input type="number" id="currentAge" value="54" min="30" max="64" oninput="updateRASlider()"></div>
       <div class="input-group"><label>Retire At Age</label><input type="number" id="retireAge" value="55" min="55" max="75"></div>
     </div>
 
     <div class="section-divider"><div class="section-title">CPF Balances (Today)</div></div>
-    <div class="input-group"><label>Special Account (SA) $</label><input type="number" id="currentSA" value="250000" step="1000" oninput="updateRASlider()"></div>
-    <div class="input-group"><label>Ordinary Account (OA) $</label><input type="number" id="currentOA" value="300000" step="1000" oninput="updateRASlider()"></div>
-    <div class="input-group"><label>Cash on Hand $</label><input type="number" id="currentCash" value="300000" step="1000"></div>
+    <div class="input-group"><label>Special Account (SA) $</label><input type="number" id="currentSA" value="240000" step="1000" oninput="updateRASlider()"></div>
+    <div class="input-group"><label>Ordinary Account (OA) $</label><input type="number" id="currentOA" value="400000" step="1000" oninput="updateRASlider()"></div>
+    <div class="input-group"><label>Cash on Hand $</label><input type="number" id="currentCash" value="350000" step="1000"></div>
 
     <div class="section-divider"><div class="section-title">Salary <span class="info-tag">3% p.a.</span></div></div>
     <div class="input-group"><label>Current Monthly Salary $ (0 if not working)</label><input type="number" id="currentSalary" value="0" step="500"></div>
@@ -163,8 +163,9 @@
     <div style="font-size:11px;color:var(--muted);margin-bottom:8px;margin-top:4px;">Cash Drawdown</div>
     <div class="input-row">
       <div class="input-group"><label>Start Age</label><input type="number" id="cashStartAge" value="55" min="30" max="90"></div>
-      <div class="input-group"><label>Monthly Amount $</label><input type="number" id="cashMonthly" value="2000" step="100"></div>
+      <div class="input-group"><label>End Age <span style="font-size:10px;color:var(--muted)">(0 = no end)</span></label><input type="number" id="cashEndAge" value="0" min="0" max="90"></div>
     </div>
+    <div class="input-group"><label>Monthly Amount $</label><input type="number" id="cashMonthly" value="2000" step="100"></div>
 
     <div class="section-divider"><div class="section-title">Housing Loan</div></div>
     <div class="checkbox-row">
@@ -357,6 +358,8 @@ function calculate() {
   const oaStartAge  = parseInt(document.getElementById('oaStartAge').value);
   const oaMonthly   = parseFloat(document.getElementById('oaMonthly').value) || 0;
   const cashStartAge= parseInt(document.getElementById('cashStartAge').value);
+  const cashEndAgeRaw = parseInt(document.getElementById('cashEndAge').value) || 0;
+  const cashEndAge  = cashEndAgeRaw > 0 ? cashEndAgeRaw : 999; // 999 = no end
   const cashMonthly = parseFloat(document.getElementById('cashMonthly').value) || 0;
   const hasLoan      = document.getElementById('hasLoan').checked;
   const loanMonthly  = hasLoan ? (parseFloat(document.getElementById('loanMonthly').value) || 0) : 0;
@@ -397,7 +400,7 @@ function calculate() {
       const oaInt = Math.min(oaBase,20000)*(oaR+0.01)+Math.max(oaBase-20000,0)*oaR;
       const saClose=saOpen+saInt, oaClose=oaBase+oaInt;
       const cSave  = working ? cashSavingsAmt*12 : 0;
-      const cWdraw = (!working&&age>=cashStartAge) ? Math.min(cashMonthly*12,cashOpen+cSave) : 0;
+      const cWdraw = (!working&&age>=cashStartAge&&age<=cashEndAge) ? Math.min(cashMonthly*12,cashOpen+cSave) : 0;
       // Housing loan deduction
       const loanActive = hasLoan && (age - currentAge) < loanYears;
       const loanAnnual = loanActive ? loanMonthly*12 : 0;
@@ -406,8 +409,8 @@ function calculate() {
       // Apply OA loan deduction (reduce oaClose)
       const oaCloseAdj = Math.max(oaClose - loanFromOA, 0);
       const cashClose=Math.max(cashOpen+cSave-cWdraw-loanFromCash,0);
-      const mIncome = working ? salary : (age>=cashStartAge ? Math.min(cashMonthly,(cashOpen+cSave)/12) : 0);
-      const cWdrawMth = (!working&&age>=cashStartAge) ? Math.min(cashMonthly,(cashOpen+cSave)/12) : 0;
+      const mIncome = working ? salary : (age>=cashStartAge&&age<=cashEndAge ? Math.min(cashMonthly,(cashOpen+cSave)/12) : 0);
+      const cWdrawMth = (!working&&age>=cashStartAge&&age<=cashEndAge) ? Math.min(cashMonthly,(cashOpen+cSave)/12) : 0;
       rows.push({age,pre55:true,working,postCpfLife:false,raDepleted:false,
         saOpen,saInt,saClose,
         raOpen:null,raInt:null,raPayout:null,raClose:null,
@@ -471,9 +474,9 @@ function calculate() {
 
     // Cash
     const cSave   = working ? cashSavingsAmt*12 : 0;
-    const cWdraw  = (!working&&age>=cashStartAge) ? Math.min(cashMonthly*12,cashOpen+cSave) : 0;
+    const cWdraw  = (!working&&age>=cashStartAge&&age<=cashEndAge) ? Math.min(cashMonthly*12,cashOpen+cSave) : 0;
     const cashClose=Math.max(cashOpen+cSave-cWdraw-loanFromCash55,0);
-    const cWdrawMth=(!working&&age>=cashStartAge) ? Math.min(cashMonthly,(cashOpen+cSave)/12) : 0;
+    const cWdrawMth=(!working&&age>=cashStartAge&&age<=cashEndAge) ? Math.min(cashMonthly,(cashOpen+cSave)/12) : 0;
 
     // Monthly income
     let mIncome=0;
@@ -481,7 +484,7 @@ function calculate() {
     else {
       if (postCpfLife) mIncome+=cpfLifePayout;
       if (age>=oaStartAge) mIncome+=oaWdrawMth;
-      if (age>=cashStartAge) mIncome+=cWdrawMth;
+      if (age>=cashStartAge&&age<=cashEndAge) mIncome+=cWdrawMth;
     }
 
     rows.push({age,pre55:false,working,postCpfLife,raDepleted,
