@@ -99,6 +99,14 @@
   .empty-state{text-align:center;padding:60px 40px;color:var(--muted);}
   .empty-state .icon{font-size:42px;margin-bottom:12px;opacity:0.4;}
   .empty-state h3{font-family:'DM Serif Display',serif;font-size:18px;color:var(--text);margin-bottom:6px;}
+  /* Housing Loan */
+  .loan-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:8px;display:none;}
+  .loan-box.visible{display:block;}
+  .checkbox-row{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+  .checkbox-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;}
+  .checkbox-row label{font-size:12px;color:var(--text);cursor:pointer;font-weight:500;}
+  .loan-note{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:6px;line-height:1.5;}
+  .loan-note span{color:var(--accent3);}
   ::-webkit-scrollbar{width:5px;height:5px;}
   ::-webkit-scrollbar-track{background:var(--bg);}
   ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
@@ -115,14 +123,14 @@
   <div class="sidebar">
     <div class="section-title">Personal Details</div>
     <div class="input-row">
-      <div class="input-group"><label>Current Age</label><input type="number" id="currentAge" value="54" min="30" max="64" oninput="updateRASlider()"></div>
+      <div class="input-group"><label>Current Age</label><input type="number" id="currentAge" value="50" min="30" max="64" oninput="updateRASlider()"></div>
       <div class="input-group"><label>Retire At Age</label><input type="number" id="retireAge" value="55" min="55" max="75"></div>
     </div>
 
     <div class="section-divider"><div class="section-title">CPF Balances (Today)</div></div>
-    <div class="input-group"><label>Special Account (SA) $</label><input type="number" id="currentSA" value="240000" step="1000" oninput="updateRASlider()"></div>
-    <div class="input-group"><label>Ordinary Account (OA) $</label><input type="number" id="currentOA" value="400000" step="1000" oninput="updateRASlider()"></div>
-    <div class="input-group"><label>Cash on Hand $</label><input type="number" id="currentCash" value="350000" step="1000"></div>
+    <div class="input-group"><label>Special Account (SA) $</label><input type="number" id="currentSA" value="250000" step="1000" oninput="updateRASlider()"></div>
+    <div class="input-group"><label>Ordinary Account (OA) $</label><input type="number" id="currentOA" value="300000" step="1000" oninput="updateRASlider()"></div>
+    <div class="input-group"><label>Cash on Hand $</label><input type="number" id="currentCash" value="300000" step="1000"></div>
 
     <div class="section-divider"><div class="section-title">Salary <span class="info-tag">3% p.a.</span></div></div>
     <div class="input-group"><label>Current Monthly Salary $ (0 if not working)</label><input type="number" id="currentSalary" value="0" step="500"></div>
@@ -156,6 +164,29 @@
     <div class="input-row">
       <div class="input-group"><label>Start Age</label><input type="number" id="cashStartAge" value="55" min="30" max="90"></div>
       <div class="input-group"><label>Monthly Amount $</label><input type="number" id="cashMonthly" value="2000" step="100"></div>
+    </div>
+
+    <div class="section-divider"><div class="section-title">Housing Loan</div></div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="hasLoan" onchange="toggleLoan()">
+      <label for="hasLoan">I have an outstanding housing loan (paid via OA)</label>
+    </div>
+    <div class="loan-box" id="loanBox">
+      <div class="input-row">
+        <div class="input-group"><label>Monthly Loan Payment $</label><input type="number" id="loanMonthly" value="1500" step="100"></div>
+        <div class="input-group"><label>Remaining Loan Years</label><input type="number" id="loanYears" value="10" min="1" max="30" step="1"></div>
+      </div>
+      <div class="input-group"><label>Paid via</label>
+        <select id="loanSource">
+          <option value="oa">OA (CPF)</option>
+          <option value="cash">Cash</option>
+          <option value="both">Both (split 50/50)</option>
+        </select>
+      </div>
+      <div class="loan-note">
+        Loan deducted from selected source each year until remaining years = 0.<br>
+        <span>Note: OA loan repayment reduces OA balance available for other use.</span>
+      </div>
     </div>
 
     <div class="section-divider"><div class="section-title">CPF Assumptions <span class="info-tag">editable</span></div></div>
@@ -306,6 +337,14 @@ function getRAAllocation() {
   return isNaN(v) ? _raMax : Math.max(_raMin, Math.min(_raMax, v));
 }
 
+// ── HOUSING LOAN TOGGLE ──
+function toggleLoan() {
+  const box = document.getElementById('loanBox');
+  document.getElementById('hasLoan').checked
+    ? box.classList.add('visible')
+    : box.classList.remove('visible');
+}
+
 // ── CALCULATE ──
 function calculate() {
   const currentAge  = parseInt(document.getElementById('currentAge').value);
@@ -319,6 +358,10 @@ function calculate() {
   const oaMonthly   = parseFloat(document.getElementById('oaMonthly').value) || 0;
   const cashStartAge= parseInt(document.getElementById('cashStartAge').value);
   const cashMonthly = parseFloat(document.getElementById('cashMonthly').value) || 0;
+  const hasLoan      = document.getElementById('hasLoan').checked;
+  const loanMonthly  = hasLoan ? (parseFloat(document.getElementById('loanMonthly').value) || 0) : 0;
+  const loanYears    = hasLoan ? (parseInt(document.getElementById('loanYears').value) || 0) : 0;
+  const loanSource   = hasLoan ? document.getElementById('loanSource').value : 'oa';
   const frs         = getProjectedFRS();
   const ers         = frs * 2;
   const raR         = (parseFloat(document.getElementById('raRate').value) || 4) / 100;
@@ -355,17 +398,24 @@ function calculate() {
       const saClose=saOpen+saInt, oaClose=oaBase+oaInt;
       const cSave  = working ? cashSavingsAmt*12 : 0;
       const cWdraw = (!working&&age>=cashStartAge) ? Math.min(cashMonthly*12,cashOpen+cSave) : 0;
-      const cashClose=Math.max(cashOpen+cSave-cWdraw,0);
+      // Housing loan deduction
+      const loanActive = hasLoan && (age - currentAge) < loanYears;
+      const loanAnnual = loanActive ? loanMonthly*12 : 0;
+      const loanFromOA = loanActive && (loanSource==='oa'||loanSource==='both') ? (loanSource==='both'?loanAnnual/2:loanAnnual) : 0;
+      const loanFromCash = loanActive && (loanSource==='cash'||loanSource==='both') ? (loanSource==='both'?loanAnnual/2:loanAnnual) : 0;
+      // Apply OA loan deduction (reduce oaClose)
+      const oaCloseAdj = Math.max(oaClose - loanFromOA, 0);
+      const cashClose=Math.max(cashOpen+cSave-cWdraw-loanFromCash,0);
       const mIncome = working ? salary : (age>=cashStartAge ? Math.min(cashMonthly,(cashOpen+cSave)/12) : 0);
       const cWdrawMth = (!working&&age>=cashStartAge) ? Math.min(cashMonthly,(cashOpen+cSave)/12) : 0;
       rows.push({age,pre55:true,working,postCpfLife:false,raDepleted:false,
         saOpen,saInt,saClose,
         raOpen:null,raInt:null,raPayout:null,raClose:null,
-        oaOpen,oaCon,oaInt,oaClose,
-        oaWdrawMth:0,
+        oaOpen,oaCon,oaInt,oaClose:oaCloseAdj,
+        oaWdrawMth:0, loanMth: loanActive?loanMonthly:0,
         cashOpen,cashClose,cWdrawMth,
-        cpfPayout:0,mIncome,nw:saClose+oaClose+cashClose,salary:working?salary:0,note:''});
-      sa=saClose; oa=oaClose; cash=cashClose;
+        cpfPayout:0,mIncome,nw:saClose+oaCloseAdj+cashClose,salary:working?salary:0,note:''});
+      sa=saClose; oa=oaCloseAdj; cash=cashClose;
       if (working) salary*=1.03;
       continue;
     }
@@ -403,19 +453,26 @@ function calculate() {
     if (postCpfLife&&raClose===0&&raDepletedAge===null&&raOpen>0) raDepletedAge=age;
     const raDepleted = postCpfLife&&raClose===0&&raOpen===0;
 
+    // Housing loan (only active for loanYears from current age)
+    const loanActive55 = hasLoan && (age - currentAge) < loanYears;
+    const loanAnnual55 = loanActive55 ? loanMonthly*12 : 0;
+    const loanFromOA55 = loanActive55&&(loanSource==='oa'||loanSource==='both') ? (loanSource==='both'?loanAnnual55/2:loanAnnual55) : 0;
+    const loanFromCash55 = loanActive55&&(loanSource==='cash'||loanSource==='both') ? (loanSource==='both'?loanAnnual55/2:loanAnnual55) : 0;
+
     // OA
     const oaCon   = working ? salary*12*getOARate(age) : 0;
     const oaBase  = oaOpen+oaCon;
     const oaInt   = Math.min(oaBase,20000)*(oaR+0.01)+Math.max(oaBase-20000,0)*oaR;
     const oaAvail = oaBase+oaInt;
     const oaWdraw = age>=oaStartAge ? Math.min(oaMonthly*12,oaAvail) : 0;
-    const oaClose = Math.max(oaAvail-oaWdraw,0);
+    const oaCloseBeforeLoan = Math.max(oaAvail-oaWdraw,0);
+    const oaClose = Math.max(oaCloseBeforeLoan-loanFromOA55,0);
     const oaWdrawMth = age>=oaStartAge ? Math.min(oaMonthly,oaAvail/12) : 0;
 
     // Cash
     const cSave   = working ? cashSavingsAmt*12 : 0;
     const cWdraw  = (!working&&age>=cashStartAge) ? Math.min(cashMonthly*12,cashOpen+cSave) : 0;
-    const cashClose=Math.max(cashOpen+cSave-cWdraw,0);
+    const cashClose=Math.max(cashOpen+cSave-cWdraw-loanFromCash55,0);
     const cWdrawMth=(!working&&age>=cashStartAge) ? Math.min(cashMonthly,(cashOpen+cSave)/12) : 0;
 
     // Monthly income
@@ -431,7 +488,7 @@ function calculate() {
       saOpen:null,saInt:null,saClose:null,
       raOpen,raInt,raPayout,raClose,
       oaOpen,oaCon,oaInt,oaClose,
-      oaWdrawMth,
+      oaWdrawMth, loanMth: loanActive55?loanMonthly:0,
       cashOpen,cashClose,cWdrawMth,
       cpfPayout:postCpfLife?cpfLifePayout:0,
       mIncome,nw:raClose+oaClose+cashClose,
@@ -477,6 +534,7 @@ function renderTable(rows,retireAge,cpfLifeAge) {
         <th colspan="4" class="grp" style="color:var(--accent);border-color:var(--accent)">RA (from 55)</th>
         <th colspan="4" class="grp" style="color:var(--accent2);border-color:var(--accent2)">OA</th>
         <th colspan="2" class="grp" style="color:var(--accent4);border-color:var(--accent4)">CASH</th>
+        <th colspan="1" class="grp" style="color:var(--accent3);border-color:var(--accent3)">LOAN</th>
         <th colspan="5" class="grp" style="color:var(--gold);border-color:var(--gold)">INCOME & TOTALS</th>
       </tr>
       <tr>
@@ -484,6 +542,7 @@ function renderTable(rows,retireAge,cpfLifeAge) {
         <th>Open</th><th>Interest</th><th>Payout Drawn</th><th>Close</th>
         <th>Open</th><th>Contribution</th><th>Interest</th><th>Close</th>
         <th>Open</th><th>Close</th>
+        <th>Loan/mth</th>
         <th>CPF LIFE/mth</th><th>OA/mth</th><th>Cash/mth</th><th>Total/mth</th><th>Net Worth</th>
       </tr>
     </thead>
@@ -498,7 +557,7 @@ function renderTable(rows,retireAge,cpfLifeAge) {
           :r.raDepleted?`CPF LIFE<br><small style="color:var(--accent3)">RA depleted</small>`
           :`CPF LIFE<br><small>active</small>`;
         const raClose = r.pre55?dash:r.raDepleted?'<span style="color:var(--accent3);font-size:10px">DEPLETED</span>':fmt(r.raClose);
-        const divider = r.note?`<tr class="divider-row"><td colspan="20">⬆ PRE-55 ACCUMULATION &nbsp;|&nbsp; ${r.note} &nbsp;|&nbsp; AGE 55 BELOW ⬇</td></tr>`:'';
+        const divider = r.note?`<tr class="divider-row"><td colspan="21">⬆ PRE-55 ACCUMULATION &nbsp;|&nbsp; ${r.note} &nbsp;|&nbsp; AGE 55 BELOW ⬇</td></tr>`:'';
         return `${divider}<tr class="${cls}">
           <td>${r.age}</td>
           <td class="phase">${phase}</td>
@@ -515,6 +574,7 @@ function renderTable(rows,retireAge,cpfLifeAge) {
           <td class="hi">${fmt(r.oaClose)}</td>
           <td>${fmt(r.cashOpen)}</td>
           <td class="hi">${fmt(r.cashClose)}</td>
+          <td>${r.loanMth>0?'<span style="color:var(--accent3)">'+fmt(r.loanMth)+'</span>':'-'}</td>
           <td>${r.cpfPayout>0?fmt(r.cpfPayout):'-'}</td>
           <td>${r.oaWdrawMth>0?fmt(r.oaWdrawMth):'-'}</td>
           <td>${r.cWdrawMth>0?fmt(r.cWdrawMth):'-'}</td>
@@ -534,7 +594,7 @@ function exportCSV() {
     'RA Open','RA Interest','RA Payout Drawn','RA Close',
     'OA Open','OA Contribution','OA Interest','OA Close',
     'Cash Open','Cash Close',
-    'CPF LIFE Payout/mth','OA Withdrawal/mth','Cash Withdrawal/mth','Total Income/mth','Net Worth'];
+    'Loan Payment/mth','CPF LIFE Payout/mth','OA Withdrawal/mth','Cash Withdrawal/mth','Total Income/mth','Net Worth'];
   const ph=(r)=>r.pre55&&r.working?'Working (pre-55)':r.pre55?'Pre-55 Accumulating':r.working?`Working ${r.age<60?'55-60':r.age<65?'60-65':'65+'}`:!r.postCpfLife?`Retired (pre-${lastCpfLifeAge})`:r.raDepleted?'CPF LIFE - RA Depleted':'CPF LIFE Active';
   const lines=[hdrs.join(',')];
   lastRows.forEach(r=>lines.push([
@@ -543,7 +603,7 @@ function exportCSV() {
     fmtNum(r.raOpen),fmtNum(r.raInt),fmtNum(r.raPayout),fmtNum(r.raClose),
     fmtNum(r.oaOpen),fmtNum(r.oaCon),fmtNum(r.oaInt),fmtNum(r.oaClose),
     fmtNum(r.cashOpen),fmtNum(r.cashClose),
-    fmtNum(r.cpfPayout),fmtNum(r.oaWdrawMth),fmtNum(r.cWdrawMth),fmtNum(r.mIncome),fmtNum(r.nw)
+    fmtNum(r.loanMth),fmtNum(r.cpfPayout),fmtNum(r.oaWdrawMth),fmtNum(r.cWdrawMth),fmtNum(r.mIncome),fmtNum(r.nw)
   ].join(',')));
   lines.push('','SUMMARY');
   lines.push(`CPF LIFE Monthly Payout,${fmtNum(lastCpfLifePayout)}`);
