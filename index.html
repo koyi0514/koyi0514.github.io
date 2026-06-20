@@ -27,7 +27,7 @@
   .section-title{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border);}
   .input-group{margin-bottom:12px;}
   .input-group label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:500;}
-  .input-group input,.input-group select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:6px;font-family:'DM Mono',monospace;font-size:12px;}
+  .input-group input,.input-group select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:6px;font-family:'DM Mono',monospace;font-size:13px;transition:border-color 0.2s;outline:none;}
   .input-group input:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(79,209,197,0.1);}
   .input-row{display:flex;gap:8px;}
   .input-row .input-group{flex:1;}
@@ -41,7 +41,7 @@
   .ra-fields{display:flex;gap:8px;margin-top:6px;}
   .ra-fields > div{flex:1;}
   .ra-fields label{display:block;font-size:10px;color:var(--muted);margin-bottom:3px;}
-  .ra-fields .ra-input{width:100%;background:var(--bg);border:1px solid var(--accent);color:var(--accent);padding:7px 10px;border-radius:6px;font-family:'DM Mono',monospace;font-size:13px;font-weight:500;}
+  .ra-fields .ra-input{width:100%;background:var(--bg);border:1px solid var(--accent);color:var(--accent);padding:7px 10px;border-radius:6px;font-family:'DM Mono',monospace;font-size:13px;font-weight:500;outline:none;}
   .ra-fields .ra-input:focus{box-shadow:0 0 0 2px rgba(79,209,197,0.2);}
   .oa-display{background:var(--bg);border:1px solid var(--border);color:var(--accent4);padding:7px 10px;border-radius:6px;font-family:'DM Mono',monospace;font-size:13px;font-weight:500;}
   /* Buttons */
@@ -54,22 +54,20 @@
   .btn-csv:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
   .info-tag{display:inline-block;background:rgba(79,209,197,0.1);color:var(--accent);font-family:'DM Mono',monospace;font-size:10px;padding:1px 6px;border-radius:3px;margin-left:4px;}
   /* Right panel */
-  .right-panel{flex:1;overflow:hidden;padding:20px;display:flex;flex-direction:column;}
-  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;flex-shrink:0;}
+  .right-panel{flex:1;overflow:auto;padding:20px;}
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
   .kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;position:relative;overflow:hidden;}
   .kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent-color,var(--accent));}
   .kpi-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-family:'DM Mono',monospace;}
   .kpi-value{font-family:'DM Serif Display',serif;font-size:20px;margin-top:5px;color:var(--accent-color,var(--accent));}
   .kpi-sub{font-size:10px;color:var(--muted);margin-top:2px;font-family:'DM Mono',monospace;}
-  .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;min-height:0;flex:1;}
-  .table-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;flex-shrink:0;}
+  .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+  .table-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
   .table-header h3{font-family:'DM Serif Display',serif;font-size:16px;color:var(--text);}
   .table-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
   .legend{display:flex;gap:12px;flex-wrap:wrap;}
   .legend-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;}
   .legend-dot{width:9px;height:9px;border-radius:2px;}
-  /* Table Container */
-  #tableContainer{overflow-x:auto;overflow-y:auto;flex:1;min-height:0;}
   /* Table */
   table{width:100%;border-collapse:collapse;}
   thead tr{background:var(--surface2);}
@@ -101,10 +99,17 @@
   .empty-state{text-align:center;padding:60px 40px;color:var(--muted);}
   .empty-state .icon{font-size:42px;margin-bottom:12px;opacity:0.4;}
   .empty-state h3{font-family:'DM Serif Display',serif;font-size:18px;color:var(--text);margin-bottom:6px;}
-  ::-webkit-scrollbar{width:10px;height:10px;}
+  /* Housing Loan */
+  .loan-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:8px;display:none;}
+  .loan-box.visible{display:block;}
+  .checkbox-row{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+  .checkbox-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;}
+  .checkbox-row label{font-size:12px;color:var(--text);cursor:pointer;font-weight:500;}
+  .loan-note{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:6px;line-height:1.5;}
+  .loan-note span{color:var(--accent3);}
+  ::-webkit-scrollbar{width:5px;height:5px;}
   ::-webkit-scrollbar-track{background:var(--bg);}
-  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:5px;}
-  ::-webkit-scrollbar-thumb:hover{background:var(--accent);}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
 </style>
 </head>
 <body>
@@ -129,7 +134,7 @@
 
     <div class="section-divider"><div class="section-title">Salary <span class="info-tag">3% p.a.</span></div></div>
     <div class="input-group"><label>Current Monthly Salary $ (0 if not working)</label><input type="number" id="currentSalary" value="0" step="500"></div>
-    <div class="input-group"><label>Monthly Cash Savings from Salary $</label><input type="number" id="cashSavings" value="0" step="100"></div>
+    <div class="input-group"><label>Monthly Cash Savings from Salary $</label><input type="number" id="cashSavings" value="2000" step="100"></div>
 
     <div class="section-divider"><div class="section-title">RA Allocation at Age 55</div></div>
     <div id="raEligibilityMsg" style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.6;"></div>
@@ -159,6 +164,29 @@
     <div class="input-row">
       <div class="input-group"><label>Start Age</label><input type="number" id="cashStartAge" value="55" min="30" max="90"></div>
       <div class="input-group"><label>Monthly Amount $</label><input type="number" id="cashMonthly" value="2000" step="100"></div>
+    </div>
+
+    <div class="section-divider"><div class="section-title">Housing Loan</div></div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="hasLoan" onchange="toggleLoan()">
+      <label for="hasLoan">I have an outstanding housing loan (paid via OA)</label>
+    </div>
+    <div class="loan-box" id="loanBox">
+      <div class="input-row">
+        <div class="input-group"><label>Monthly Loan Payment $</label><input type="number" id="loanMonthly" value="1500" step="100"></div>
+        <div class="input-group"><label>Remaining Loan Years</label><input type="number" id="loanYears" value="10" min="1" max="30" step="1"></div>
+      </div>
+      <div class="input-group"><label>Paid via</label>
+        <select id="loanSource">
+          <option value="oa">OA (CPF)</option>
+          <option value="cash">Cash</option>
+          <option value="both">Both (split 50/50)</option>
+        </select>
+      </div>
+      <div class="loan-note">
+        Loan deducted from selected source each year until remaining years = 0.<br>
+        <span>Note: OA loan repayment reduces OA balance available for other use.</span>
+      </div>
     </div>
 
     <div class="section-divider"><div class="section-title">CPF Assumptions <span class="info-tag">editable</span></div></div>
@@ -266,7 +294,7 @@ function updateRASlider() {
   const msgEl = document.getElementById('raEligibilityMsg');
 
   if (_raTotal <= frs) {
-    msgEl.innerHTML = `<span style="color:var(--accent4)">✓</span> Projected SA+OA at 55 (<span style="color:var(--accent);font-family:'DM Mono',monospace">${fmt(_raTotal)}</span>) ≤ FRS — auto-allocated to RA.`;
+    msgEl.innerHTML = `<span style="color:var(--accent4)">✓</span> Projected SA+OA at 55 (<span style="color:var(--accent);font-family:'DM Mono',monospace">${fmt(_raTotal)}</span>) ≤ FRS — full amount goes to RA automatically.`;
     raBox.classList.remove('visible');
   } else {
     msgEl.innerHTML = `Projected SA+OA at 55: <span style="color:var(--accent);font-family:'DM Mono',monospace">${fmt(_raTotal)}</span> — exceeds FRS. Set RA allocation:`;
@@ -309,6 +337,14 @@ function getRAAllocation() {
   return isNaN(v) ? _raMax : Math.max(_raMin, Math.min(_raMax, v));
 }
 
+// ── HOUSING LOAN TOGGLE ──
+function toggleLoan() {
+  const box = document.getElementById('loanBox');
+  document.getElementById('hasLoan').checked
+    ? box.classList.add('visible')
+    : box.classList.remove('visible');
+}
+
 // ── CALCULATE ──
 function calculate() {
   const currentAge  = parseInt(document.getElementById('currentAge').value);
@@ -322,6 +358,10 @@ function calculate() {
   const oaMonthly   = parseFloat(document.getElementById('oaMonthly').value) || 0;
   const cashStartAge= parseInt(document.getElementById('cashStartAge').value);
   const cashMonthly = parseFloat(document.getElementById('cashMonthly').value) || 0;
+  const hasLoan      = document.getElementById('hasLoan').checked;
+  const loanMonthly  = hasLoan ? (parseFloat(document.getElementById('loanMonthly').value) || 0) : 0;
+  const loanYears    = hasLoan ? (parseInt(document.getElementById('loanYears').value) || 0) : 0;
+  const loanSource   = hasLoan ? document.getElementById('loanSource').value : 'oa';
   const frs         = getProjectedFRS();
   const ers         = frs * 2;
   const raR         = (parseFloat(document.getElementById('raRate').value) || 4) / 100;
@@ -358,17 +398,24 @@ function calculate() {
       const saClose=saOpen+saInt, oaClose=oaBase+oaInt;
       const cSave  = working ? cashSavingsAmt*12 : 0;
       const cWdraw = (!working&&age>=cashStartAge) ? Math.min(cashMonthly*12,cashOpen+cSave) : 0;
-      const cashClose=Math.max(cashOpen+cSave-cWdraw,0);
+      // Housing loan deduction
+      const loanActive = hasLoan && (age - currentAge) < loanYears;
+      const loanAnnual = loanActive ? loanMonthly*12 : 0;
+      const loanFromOA = loanActive && (loanSource==='oa'||loanSource==='both') ? (loanSource==='both'?loanAnnual/2:loanAnnual) : 0;
+      const loanFromCash = loanActive && (loanSource==='cash'||loanSource==='both') ? (loanSource==='both'?loanAnnual/2:loanAnnual) : 0;
+      // Apply OA loan deduction (reduce oaClose)
+      const oaCloseAdj = Math.max(oaClose - loanFromOA, 0);
+      const cashClose=Math.max(cashOpen+cSave-cWdraw-loanFromCash,0);
       const mIncome = working ? salary : (age>=cashStartAge ? Math.min(cashMonthly,(cashOpen+cSave)/12) : 0);
       const cWdrawMth = (!working&&age>=cashStartAge) ? Math.min(cashMonthly,(cashOpen+cSave)/12) : 0;
       rows.push({age,pre55:true,working,postCpfLife:false,raDepleted:false,
         saOpen,saInt,saClose,
         raOpen:null,raInt:null,raPayout:null,raClose:null,
-        oaOpen,oaCon,oaInt,oaClose,
-        oaWdrawMth:0,
+        oaOpen,oaCon,oaInt,oaClose:oaCloseAdj,
+        oaWdrawMth:0, loanMth: loanActive?loanMonthly:0,
         cashOpen,cashClose,cWdrawMth,
-        cpfPayout:0,mIncome,nw:saClose+oaClose+cashClose,salary:working?salary:0,note:''});
-      sa=saClose; oa=oaClose; cash=cashClose;
+        cpfPayout:0,mIncome,nw:saClose+oaCloseAdj+cashClose,salary:working?salary:0,note:''});
+      sa=saClose; oa=oaCloseAdj; cash=cashClose;
       if (working) salary*=1.03;
       continue;
     }
@@ -406,19 +453,26 @@ function calculate() {
     if (postCpfLife&&raClose===0&&raDepletedAge===null&&raOpen>0) raDepletedAge=age;
     const raDepleted = postCpfLife&&raClose===0&&raOpen===0;
 
+    // Housing loan (only active for loanYears from current age)
+    const loanActive55 = hasLoan && (age - currentAge) < loanYears;
+    const loanAnnual55 = loanActive55 ? loanMonthly*12 : 0;
+    const loanFromOA55 = loanActive55&&(loanSource==='oa'||loanSource==='both') ? (loanSource==='both'?loanAnnual55/2:loanAnnual55) : 0;
+    const loanFromCash55 = loanActive55&&(loanSource==='cash'||loanSource==='both') ? (loanSource==='both'?loanAnnual55/2:loanAnnual55) : 0;
+
     // OA
     const oaCon   = working ? salary*12*getOARate(age) : 0;
     const oaBase  = oaOpen+oaCon;
     const oaInt   = Math.min(oaBase,20000)*(oaR+0.01)+Math.max(oaBase-20000,0)*oaR;
     const oaAvail = oaBase+oaInt;
     const oaWdraw = age>=oaStartAge ? Math.min(oaMonthly*12,oaAvail) : 0;
-    const oaClose = Math.max(oaAvail-oaWdraw,0);
+    const oaCloseBeforeLoan = Math.max(oaAvail-oaWdraw,0);
+    const oaClose = Math.max(oaCloseBeforeLoan-loanFromOA55,0);
     const oaWdrawMth = age>=oaStartAge ? Math.min(oaMonthly,oaAvail/12) : 0;
 
     // Cash
     const cSave   = working ? cashSavingsAmt*12 : 0;
     const cWdraw  = (!working&&age>=cashStartAge) ? Math.min(cashMonthly*12,cashOpen+cSave) : 0;
-    const cashClose=Math.max(cashOpen+cSave-cWdraw,0);
+    const cashClose=Math.max(cashOpen+cSave-cWdraw-loanFromCash55,0);
     const cWdrawMth=(!working&&age>=cashStartAge) ? Math.min(cashMonthly,(cashOpen+cSave)/12) : 0;
 
     // Monthly income
@@ -434,7 +488,7 @@ function calculate() {
       saOpen:null,saInt:null,saClose:null,
       raOpen,raInt,raPayout,raClose,
       oaOpen,oaCon,oaInt,oaClose,
-      oaWdrawMth,
+      oaWdrawMth, loanMth: loanActive55?loanMonthly:0,
       cashOpen,cashClose,cWdrawMth,
       cpfPayout:postCpfLife?cpfLifePayout:0,
       mIncome,nw:raClose+oaClose+cashClose,
@@ -472,7 +526,7 @@ function renderKPIs(rows,cpfLifePayout,cpfLifeAge,raAtCpfLife,raDepletedAge,reti
 // ── TABLE ──
 function renderTable(rows,retireAge,cpfLifeAge) {
   const dash='<span style="color:var(--muted)">—</span>';
-  const html=`<table>
+  const html=`<div style="overflow-x:auto;"><table>
     <thead>
       <tr>
         <th rowspan="2">Age</th><th rowspan="2">Phase</th>
@@ -480,6 +534,7 @@ function renderTable(rows,retireAge,cpfLifeAge) {
         <th colspan="4" class="grp" style="color:var(--accent);border-color:var(--accent)">RA (from 55)</th>
         <th colspan="4" class="grp" style="color:var(--accent2);border-color:var(--accent2)">OA</th>
         <th colspan="2" class="grp" style="color:var(--accent4);border-color:var(--accent4)">CASH</th>
+        <th colspan="1" class="grp" style="color:var(--accent3);border-color:var(--accent3)">LOAN</th>
         <th colspan="5" class="grp" style="color:var(--gold);border-color:var(--gold)">INCOME & TOTALS</th>
       </tr>
       <tr>
@@ -487,6 +542,7 @@ function renderTable(rows,retireAge,cpfLifeAge) {
         <th>Open</th><th>Interest</th><th>Payout Drawn</th><th>Close</th>
         <th>Open</th><th>Contribution</th><th>Interest</th><th>Close</th>
         <th>Open</th><th>Close</th>
+        <th>Loan/mth</th>
         <th>CPF LIFE/mth</th><th>OA/mth</th><th>Cash/mth</th><th>Total/mth</th><th>Net Worth</th>
       </tr>
     </thead>
@@ -501,7 +557,7 @@ function renderTable(rows,retireAge,cpfLifeAge) {
           :r.raDepleted?`CPF LIFE<br><small style="color:var(--accent3)">RA depleted</small>`
           :`CPF LIFE<br><small>active</small>`;
         const raClose = r.pre55?dash:r.raDepleted?'<span style="color:var(--accent3);font-size:10px">DEPLETED</span>':fmt(r.raClose);
-        const divider = r.note?`<tr class="divider-row"><td colspan="20">⬆ PRE-55 ACCUMULATION &nbsp;|&nbsp; ${r.note} &nbsp;|&nbsp; AGE 55 BELOW ⬇</td></tr>`:'';
+        const divider = r.note?`<tr class="divider-row"><td colspan="21">⬆ PRE-55 ACCUMULATION &nbsp;|&nbsp; ${r.note} &nbsp;|&nbsp; AGE 55 BELOW ⬇</td></tr>`:'';
         return `${divider}<tr class="${cls}">
           <td>${r.age}</td>
           <td class="phase">${phase}</td>
@@ -518,6 +574,7 @@ function renderTable(rows,retireAge,cpfLifeAge) {
           <td class="hi">${fmt(r.oaClose)}</td>
           <td>${fmt(r.cashOpen)}</td>
           <td class="hi">${fmt(r.cashClose)}</td>
+          <td>${r.loanMth>0?'<span style="color:var(--accent3)">'+fmt(r.loanMth)+'</span>':'-'}</td>
           <td>${r.cpfPayout>0?fmt(r.cpfPayout):'-'}</td>
           <td>${r.oaWdrawMth>0?fmt(r.oaWdrawMth):'-'}</td>
           <td>${r.cWdrawMth>0?fmt(r.cWdrawMth):'-'}</td>
@@ -526,7 +583,7 @@ function renderTable(rows,retireAge,cpfLifeAge) {
         </tr>`;
       }).join('')}
     </tbody>
-  </table>`;
+  </table></div>`;
   document.getElementById('tableContainer').innerHTML=html;
 }
 
@@ -537,8 +594,8 @@ function exportCSV() {
     'RA Open','RA Interest','RA Payout Drawn','RA Close',
     'OA Open','OA Contribution','OA Interest','OA Close',
     'Cash Open','Cash Close',
-    'CPF LIFE Payout/mth','OA Withdrawal/mth','Cash Withdrawal/mth','Total Income/mth','Net Worth'];
-  const ph=(r)=>r.pre55&&r.working?'Working (pre-55)':r.pre55?'Pre-55 Accumulating':r.working?`Working ${r.age<60?'55-60':r.age<65?'60-65':'65+'}`:!r.postCpfLife?`Retired (pre-${lastCpfLifeAge})`:(r.raDepleted?'CPF LIFE (RA depleted)':'CPF LIFE');
+    'Loan Payment/mth','CPF LIFE Payout/mth','OA Withdrawal/mth','Cash Withdrawal/mth','Total Income/mth','Net Worth'];
+  const ph=(r)=>r.pre55&&r.working?'Working (pre-55)':r.pre55?'Pre-55 Accumulating':r.working?`Working ${r.age<60?'55-60':r.age<65?'60-65':'65+'}`:!r.postCpfLife?`Retired (pre-${lastCpfLifeAge})`:r.raDepleted?'CPF LIFE - RA Depleted':'CPF LIFE Active';
   const lines=[hdrs.join(',')];
   lastRows.forEach(r=>lines.push([
     r.age,ph(r),
@@ -546,7 +603,7 @@ function exportCSV() {
     fmtNum(r.raOpen),fmtNum(r.raInt),fmtNum(r.raPayout),fmtNum(r.raClose),
     fmtNum(r.oaOpen),fmtNum(r.oaCon),fmtNum(r.oaInt),fmtNum(r.oaClose),
     fmtNum(r.cashOpen),fmtNum(r.cashClose),
-    fmtNum(r.cpfPayout),fmtNum(r.oaWdrawMth),fmtNum(r.cWdrawMth),fmtNum(r.mIncome),fmtNum(r.nw)
+    fmtNum(r.loanMth),fmtNum(r.cpfPayout),fmtNum(r.oaWdrawMth),fmtNum(r.cWdrawMth),fmtNum(r.mIncome),fmtNum(r.nw)
   ].join(',')));
   lines.push('','SUMMARY');
   lines.push(`CPF LIFE Monthly Payout,${fmtNum(lastCpfLifePayout)}`);
