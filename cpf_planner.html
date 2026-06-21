@@ -107,9 +107,10 @@
   .checkbox-row label{font-size:12px;color:var(--text);cursor:pointer;font-weight:500;}
   .loan-note{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:6px;line-height:1.5;}
   .loan-note span{color:var(--accent3);}
-  ::-webkit-scrollbar{width:5px;height:5px;}
-  ::-webkit-scrollbar-track{background:var(--bg);}
-  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+  ::-webkit-scrollbar{width:6px;height:6px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.4);border-radius:3px;}
+  ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.7);}
 </style>
 </head>
 <body>
@@ -123,8 +124,8 @@
   <div class="sidebar">
     <div class="section-title">Personal Details</div>
     <div class="input-row">
-      <div class="input-group"><label>Current Age</label><input type="number" id="currentAge" value="54" min="30" max="64" oninput="updateRASlider()"></div>
-      <div class="input-group"><label>Retire At Age</label><input type="number" id="retireAge" value="55" min="55" max="75"></div>
+      <div class="input-group"><label>Current Age</label><input type="number" id="currentAge" value="54" min="30" max="89" oninput="updateRASlider()"></div>
+      <div class="input-group"><label>Retire At Age</label><input type="number" id="retireAge" value="55" min="55" max="90"></div>
     </div>
 
     <div class="section-divider"><div class="section-title">CPF Balances (Today)</div></div>
@@ -207,9 +208,27 @@
       <div class="input-group"><label>RA Rate % (base)</label><input type="number" id="raRate" value="4" step="0.1" min="0" max="10" oninput="updateRASlider()"></div>
       <div class="input-group"><label>OA Rate % (base)</label><input type="number" id="oaRate" value="2.5" step="0.1" min="0" max="10"></div>
     </div>
+    <div class="input-group">
+      <label>CPF LIFE Plan</label>
+      <select id="cpfLifePlan" onchange="onPlanChange()">
+        <option value="standard">Standard Plan</option>
+        <option value="basic">Basic Plan</option>
+        <option value="escalating">Escalating Plan</option>
+      </select>
+    </div>
+    <div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin:-6px 0 10px;padding:6px 10px;background:var(--surface2);border-radius:6px;line-height:1.6;" id="planDesc">
+      Fixed monthly payout for life. Most popular option.
+    </div>
     <div class="input-row">
-      <div class="input-group"><label>Payout Rate ($ per $1k RA)</label><input type="number" id="payoutRate" value="5.75" step="0.05"></div>
+      <div class="input-group"><label>Payout Rate ($ per $1k RA) <span style="font-size:10px;color:var(--muted)">editable</span></label><input type="number" id="payoutRate" value="5.7" step="0.05"></div>
       <div class="input-group"><label>CPF LIFE Start Age</label><input type="number" id="cpfLifeAge" value="65" min="65" max="70"></div>
+    </div>
+    <div id="escalatingInfo" style="display:none;font-size:10px;color:var(--accent2);font-family:'DM Mono',monospace;margin:-4px 0 10px;padding:6px 10px;background:rgba(246,173,85,0.08);border:1px solid rgba(246,173,85,0.2);border-radius:6px;line-height:1.6;">
+      ⬆ Payout increases 2% every year from CPF LIFE start age. Lower initial payout but grows over time.
+    </div>
+    <div class="input-group">
+      <label>Annual Inflation Rate % <span style="font-size:10px;color:var(--muted)">(for today's $ equivalent column)</span></label>
+      <input type="number" id="inflationRate" value="2" step="0.1" min="0" max="20">
     </div>
 
     <div id="errorMsg" class="error-msg"></div>
@@ -229,6 +248,7 @@
             <div class="legend-item"><div class="legend-dot" style="background:var(--pre65-text)"></div>Pre-CPF LIFE</div>
             <div class="legend-item"><div class="legend-dot" style="background:var(--post65-text)"></div>CPF LIFE</div>
             <div class="legend-item"><div class="legend-dot" style="background:var(--depleted-text)"></div>RA Depleted</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#b794f4"></div>Today's $ value</div>
           </div>
           <button class="btn btn-csv" id="csvBtn" onclick="exportCSV()" disabled>⬇ Export CSV</button>
         </div>
@@ -294,13 +314,34 @@ function updateRASlider() {
   const raBox = document.getElementById('raBox');
   const msgEl = document.getElementById('raEligibilityMsg');
 
+  // If already 55+, allow free RA input — no FRS/ERS constraint
+  if (currentAge >= 55) {
+    _raTotal = sa + oa;
+    _raMin = 0;         // free input — no minimum enforced
+    _raMax = _raTotal;  // cannot exceed total SA+OA
+    msgEl.innerHTML = `Current SA+OA: <span style="color:var(--accent);font-family:'DM Mono',monospace">${fmt(_raTotal)}</span> — enter your actual RA allocation below:`;
+    raBox.classList.add('visible');
+    document.getElementById('raInfo').innerHTML = `Defaulted to your SA value (your RA at 55). Adjust if needed. Max is ${fmt(_raTotal)} (full SA+OA).`;
+    document.getElementById('raMinLabel').textContent = `Min: $0`;
+    document.getElementById('raMaxLabel').textContent = `Max (SA+OA): ${fmt(_raTotal)}`;
+    const sl = document.getElementById('raSlider');
+    sl.min = 0; sl.max = _raTotal; sl.step = 1000;
+    // Default to SA value — this represents what was locked into RA at age 55
+    const cur = parseFloat(document.getElementById('raInput').value);
+    if (isNaN(cur) || cur < 0 || cur > _raTotal) setRAValue(sa); // default = SA
+    else setRAValue(cur);
+    return; // skip normal FRS/ERS logic below
+  }
+
   if (_raTotal <= frs) {
     msgEl.innerHTML = `<span style="color:var(--accent4)">✓</span> Projected SA+OA at 55 (<span style="color:var(--accent);font-family:'DM Mono',monospace">${fmt(_raTotal)}</span>) ≤ FRS — full amount goes to RA automatically.`;
     raBox.classList.remove('visible');
   } else {
-    msgEl.innerHTML = `Projected SA+OA at 55: <span style="color:var(--accent);font-family:'DM Mono',monospace">${fmt(_raTotal)}</span> — exceeds FRS. Set RA allocation:`;
+    const label = 'Projected SA+OA at 55';
+    msgEl.innerHTML = `${label}: <span style="color:var(--accent);font-family:'DM Mono',monospace">${fmt(_raTotal)}</span> — exceeds FRS. Set RA allocation:`;
     raBox.classList.add('visible');
-    document.getElementById('raInfo').innerHTML = `Slide or type an amount between FRS and ERS:`;
+    const raLabel = currentAge >= 55 ? `Current age ${currentAge}` : 'Age 55';
+    document.getElementById('raInfo').innerHTML = `Set RA allocation at ${raLabel} — between FRS and ERS:`;
     const sl = document.getElementById('raSlider');
     sl.min = _raMin; sl.max = _raMax; sl.step = 1000;
     document.getElementById('raMinLabel').textContent = `FRS min: ${fmt(_raMin)}`;
@@ -328,14 +369,30 @@ function onSliderMove() {
 
 function onRAInputType() {
   const val = parseFloat(document.getElementById('raInput').value);
-  if (!isNaN(val)) setRAValue(val);
+  if (isNaN(val)) return;
+  const currentAge = parseInt(document.getElementById('currentAge').value);
+  if (currentAge >= 55) {
+    // Free input — clamp only to 0 and total
+    const clamped = Math.max(0, Math.min(val, _raTotal));
+    document.getElementById('raSlider').value = clamped;
+    document.getElementById('raInput').value = Math.round(val); // allow typing freely
+    document.getElementById('oaLeftoverDisplay').textContent = fmt(_raTotal - Math.max(0, Math.min(val, _raTotal)));
+  } else {
+    setRAValue(val);
+  }
 }
 
 function getRAAllocation() {
   const raBox = document.getElementById('raBox');
   if (!raBox.classList.contains('visible')) return null; // use totalAt55 auto
   const v = parseFloat(document.getElementById('raInput').value);
-  return isNaN(v) ? _raMax : Math.max(_raMin, Math.min(_raMax, v));
+  if (isNaN(v)) return _raMax;
+  const currentAge = parseInt(document.getElementById('currentAge').value);
+  if (currentAge >= 55) {
+    // Free input — just clamp to 0 and total SA+OA
+    return Math.max(0, Math.min(v, _raTotal));
+  }
+  return Math.max(_raMin, Math.min(_raMax, v));
 }
 
 // ── HOUSING LOAN TOGGLE ──
@@ -344,6 +401,21 @@ function toggleLoan() {
   document.getElementById('hasLoan').checked
     ? box.classList.add('visible')
     : box.classList.remove('visible');
+}
+
+// ── CPF LIFE PLAN CHANGE ──
+const PLAN_RATES = { standard: 5.7, basic: 5.2, escalating: 4.5 };
+const PLAN_DESCS = {
+  standard: 'Fixed monthly payout for life. Most popular option.',
+  basic: 'Lower fixed payout but higher bequest for beneficiaries.',
+  escalating: 'Starts lower but payout increases 2% every year — better protection against inflation.'
+};
+
+function onPlanChange() {
+  const plan = document.getElementById('cpfLifePlan').value;
+  document.getElementById('payoutRate').value = PLAN_RATES[plan];
+  document.getElementById('planDesc').textContent = PLAN_DESCS[plan];
+  document.getElementById('escalatingInfo').style.display = plan === 'escalating' ? 'block' : 'none';
 }
 
 // ── CALCULATE ──
@@ -369,25 +441,39 @@ function calculate() {
   const ers         = frs * 2;
   const raR         = (parseFloat(document.getElementById('raRate').value) || 4) / 100;
   const oaR         = (parseFloat(document.getElementById('oaRate').value) || 2.5) / 100;
-  const payoutRate  = parseFloat(document.getElementById('payoutRate').value) || 5.75;
-  const cpfLifeAge  = parseInt(document.getElementById('cpfLifeAge').value) || 65;
+  const payoutRate    = parseFloat(document.getElementById('payoutRate').value) || 5.7;
+  const cpfLifeAge    = parseInt(document.getElementById('cpfLifeAge').value) || 65;
+  const cpfLifePlan   = document.getElementById('cpfLifePlan').value;
+  const escalatingGrowth = 0.02; // 2% annual increase for escalating plan
+  const inflationRate = (parseFloat(document.getElementById('inflationRate').value) || 2) / 100;
 
   const errEl = document.getElementById('errorMsg');
   errEl.classList.remove('visible');
-  if (currentAge >= 55) { errEl.textContent='Current age must be below 55.'; errEl.classList.add('visible'); return; }
+  if (retireAge < currentAge) { errEl.textContent='Retire age must be greater than or equal to current age.'; errEl.classList.add('visible'); return; }
   if (retireAge < 55)   { errEl.textContent='Retire age must be 55 or above.'; errEl.classList.add('visible'); return; }
   if (cpfLifeAge<65||cpfLifeAge>70) { errEl.textContent='CPF LIFE start age must be 65–70.'; errEl.classList.add('visible'); return; }
 
   let sa=currentSA, oa=currentOA, cash=currentCash, salary=currentSalary;
   let ra=0, raFormed=false;
   let raDepletedAge=null, cpfLifePayout=0, raAtCpfLife=0;
-  // Store RA formation details for divider note
   let ra55note = '';
   const rows = [];
 
+  // If user is already 55+, form RA immediately before the loop using free input
+  if (currentAge >= 55) {
+    raFormed = true;
+    const totalNow = sa + oa;
+    const alloc = getRAAllocation();
+    // Free allocation — any value from 0 to totalNow
+    const raInit = alloc !== null ? Math.max(0, Math.min(alloc, totalNow)) : totalNow;
+    const oaInit = totalNow - raInit;
+    ra55note = `SA+OA at age ${currentAge}: ${fmt(sa+oa)}  →  RA allocated: ${fmt(raInit)}  |  OA withdrawable: ${fmt(oaInit)}`;
+    ra = raInit; oa = oaInit; sa = 0;
+  }
+
   for (let age = currentAge; age <= 90; age++) {
     const pre55 = age < 55;
-    const is55  = age === 55;
+    const is55  = age === 55 && !raFormed;
     const working = salary > 0 && age < retireAge;
     const postCpfLife = age >= cpfLifeAge;
 
@@ -411,19 +497,22 @@ function calculate() {
       const cashClose=Math.max(cashOpen+cSave-cWdraw-loanFromCash,0);
       const mIncome = working ? salary : (age>=cashStartAge&&age<=cashEndAge ? Math.min(cashMonthly,(cashOpen+cSave)/12) : 0);
       const cWdrawMth = (!working&&age>=cashStartAge&&age<=cashEndAge) ? Math.min(cashMonthly,(cashOpen+cSave)/12) : 0;
+      const yearsFromNow_pre55 = age - currentAge;
+      const realMIncome_pre55 = mIncome / Math.pow(1 + inflationRate, yearsFromNow_pre55);
       rows.push({age,pre55:true,working,postCpfLife:false,raDepleted:false,
         saOpen,saInt,saClose,
         raOpen:null,raInt:null,raPayout:null,raClose:null,
         oaOpen,oaCon,oaInt,oaClose:oaCloseAdj,
         oaWdrawMth:0, loanMth: loanActive?loanMonthly:0,
         cashOpen,cashClose,cWdrawMth,
-        cpfPayout:0,mIncome,nw:saClose+oaCloseAdj+cashClose,salary:working?salary:0,note:''});
+        cpfPayout:0,mIncome,realMIncome:realMIncome_pre55,
+        nw:saClose+oaCloseAdj+cashClose,salary:working?salary:0,note:''});
       sa=saClose; oa=oaCloseAdj; cash=cashClose;
       if (working) salary*=1.03;
       continue;
     }
 
-    // ── AT 55: RA FORMATION (runs once) ──
+    // ── AT 55: RA FORMATION (runs once, skipped if already formed above) ──
     if (is55 && !raFormed) {
       raFormed=true;
       const total55=sa+oa;
@@ -449,9 +538,14 @@ function calculate() {
 
     // Fix CPF LIFE payout at cpfLifeAge based on RA opening that year
     if (age===cpfLifeAge) { raAtCpfLife=raOpen; cpfLifePayout=(raAtCpfLife/1000)*payoutRate; }
+    // For escalating plan, increase payout by 2% each year after start age
+    const yearsSinceCpfLife = age - cpfLifeAge;
+    const effectivePayout = (postCpfLife && cpfLifePlan==='escalating' && yearsSinceCpfLife>0)
+      ? cpfLifePayout * Math.pow(1+escalatingGrowth, yearsSinceCpfLife)
+      : cpfLifePayout;
 
     // Deduct annual payout from RA
-    const raPayout = postCpfLife ? Math.min(cpfLifePayout*12, Math.max(raOpen+raInt,0)) : 0;
+    const raPayout = postCpfLife ? Math.min(effectivePayout*12, Math.max(raOpen+raInt,0)) : 0;
     const raClose  = Math.max(raOpen+raInt-raPayout,0);
     if (postCpfLife&&raClose===0&&raDepletedAge===null&&raOpen>0) raDepletedAge=age;
     const raDepleted = postCpfLife&&raClose===0&&raOpen===0;
@@ -482,21 +576,24 @@ function calculate() {
     let mIncome=0;
     if (working) { mIncome=salary; }
     else {
-      if (postCpfLife) mIncome+=cpfLifePayout;
+      if (postCpfLife) mIncome+=effectivePayout;
       if (age>=oaStartAge) mIncome+=oaWdrawMth;
       if (age>=cashStartAge&&age<=cashEndAge) mIncome+=cWdrawMth;
     }
 
+    const yearsFromNow_post55 = age - currentAge;
+    const realMIncome_post55 = mIncome / Math.pow(1 + inflationRate, yearsFromNow_post55);
     rows.push({age,pre55:false,working,postCpfLife,raDepleted,
       saOpen:null,saInt:null,saClose:null,
       raOpen,raInt,raPayout,raClose,
       oaOpen,oaCon,oaInt,oaClose,
       oaWdrawMth, loanMth: loanActive55?loanMonthly:0,
       cashOpen,cashClose,cWdrawMth,
-      cpfPayout:postCpfLife?cpfLifePayout:0,
-      mIncome,nw:raClose+oaClose+cashClose,
+      cpfPayout:postCpfLife?effectivePayout:0,
+      mIncome,realMIncome:realMIncome_post55,
+      nw:raClose+oaClose+cashClose,
       salary:working?salary:0,
-      note: is55 ? ra55note : ''});
+      note: (is55 || (age === currentAge && currentAge >= 55 && !rows.length)) ? ra55note : ''});
 
     ra=raClose; oa=oaClose; cash=cashClose;
     if (working) salary*=1.03;
@@ -504,16 +601,16 @@ function calculate() {
 
   lastRows=rows; lastCpfLifePayout=cpfLifePayout; lastCpfLifeAge=cpfLifeAge;
   document.getElementById('csvBtn').disabled=false;
-  renderKPIs(rows,cpfLifePayout,cpfLifeAge,raAtCpfLife,raDepletedAge,retireAge);
+  renderKPIs(rows,cpfLifePayout,cpfLifeAge,raAtCpfLife,raDepletedAge,retireAge,cpfLifePlan);
   renderTable(rows,retireAge,cpfLifeAge);
 }
 
 // ── KPIs ──
-function renderKPIs(rows,cpfLifePayout,cpfLifeAge,raAtCpfLife,raDepletedAge,retireAge) {
+function renderKPIs(rows,cpfLifePayout,cpfLifeAge,raAtCpfLife,raDepletedAge,retireAge,cpfLifePlan) {
   document.getElementById('kpiSection').style.display='block';
   const r90=rows.find(r=>r.age===90);
   const kpis=[
-    {label:'CPF LIFE Monthly',value:fmt(cpfLifePayout),sub:`From age ${cpfLifeAge}, for life`,color:'#4fd1c5'},
+    {label:'CPF LIFE Monthly',value:fmt(cpfLifePayout),sub:`${cpfLifePlan.charAt(0).toUpperCase()+cpfLifePlan.slice(1)} Plan · from age ${cpfLifeAge}${cpfLifePlan==='escalating'?' · +2%/yr':''}`,color:'#4fd1c5'},
     {label:`RA at Age ${cpfLifeAge}`,value:fmt(raAtCpfLife),sub:'Payout basis',color:'#f6ad55'},
     {label:'RA Depletes At',value:raDepletedAge?`Age ${raDepletedAge}`:'Age 90+',sub:raDepletedAge?'CPF LIFE continues':'Still active at 90',color:raDepletedAge?'#fc8181':'#68d391'},
     {label:'Net Worth at 90',value:fmt(r90?.nw),sub:'RA + OA + Cash',color:'#b794f4'},
@@ -538,7 +635,7 @@ function renderTable(rows,retireAge,cpfLifeAge) {
         <th colspan="4" class="grp" style="color:var(--accent2);border-color:var(--accent2)">OA</th>
         <th colspan="2" class="grp" style="color:var(--accent4);border-color:var(--accent4)">CASH</th>
         <th colspan="1" class="grp" style="color:var(--accent3);border-color:var(--accent3)">LOAN</th>
-        <th colspan="5" class="grp" style="color:var(--gold);border-color:var(--gold)">INCOME & TOTALS</th>
+        <th colspan="6" class="grp" style="color:var(--gold);border-color:var(--gold)">INCOME & TOTALS</th>
       </tr>
       <tr>
         <th>Open</th><th>Interest</th><th>Close</th>
@@ -546,7 +643,7 @@ function renderTable(rows,retireAge,cpfLifeAge) {
         <th>Open</th><th>Contribution</th><th>Interest</th><th>Close</th>
         <th>Open</th><th>Close</th>
         <th>Loan/mth</th>
-        <th>CPF LIFE/mth</th><th>OA/mth</th><th>Cash/mth</th><th>Total/mth</th><th>Net Worth</th>
+        <th>CPF LIFE/mth</th><th>OA/mth</th><th>Cash/mth</th><th>Total/mth</th><th>Today's $<br><small>(inflation adj.)</small></th><th>Net Worth</th>
       </tr>
     </thead>
     <tbody>
@@ -582,6 +679,7 @@ function renderTable(rows,retireAge,cpfLifeAge) {
           <td>${r.oaWdrawMth>0?fmt(r.oaWdrawMth):'-'}</td>
           <td>${r.cWdrawMth>0?fmt(r.cWdrawMth):'-'}</td>
           <td style="color:var(--gold);font-weight:500">${fmt(r.mIncome)}</td>
+          <td style="color:#b794f4;font-weight:500">${fmt(r.realMIncome)}</td>
           <td style="color:var(--text);font-weight:500">${fmt(r.nw)}</td>
         </tr>`;
       }).join('')}
@@ -597,7 +695,7 @@ function exportCSV() {
     'RA Open','RA Interest','RA Payout Drawn','RA Close',
     'OA Open','OA Contribution','OA Interest','OA Close',
     'Cash Open','Cash Close',
-    'Loan Payment/mth','CPF LIFE Payout/mth','OA Withdrawal/mth','Cash Withdrawal/mth','Total Income/mth','Net Worth'];
+    'Loan Payment/mth','CPF LIFE Payout/mth','OA Withdrawal/mth','Cash Withdrawal/mth','Total Income/mth',"Today's $ (inflation adj.)/mth",'Net Worth'];
   const ph=(r)=>r.pre55&&r.working?'Working (pre-55)':r.pre55?'Pre-55 Accumulating':r.working?`Working ${r.age<60?'55-60':r.age<65?'60-65':'65+'}`:!r.postCpfLife?`Retired (pre-${lastCpfLifeAge})`:r.raDepleted?'CPF LIFE - RA Depleted':'CPF LIFE Active';
   const lines=[hdrs.join(',')];
   lastRows.forEach(r=>lines.push([
@@ -606,7 +704,7 @@ function exportCSV() {
     fmtNum(r.raOpen),fmtNum(r.raInt),fmtNum(r.raPayout),fmtNum(r.raClose),
     fmtNum(r.oaOpen),fmtNum(r.oaCon),fmtNum(r.oaInt),fmtNum(r.oaClose),
     fmtNum(r.cashOpen),fmtNum(r.cashClose),
-    fmtNum(r.loanMth),fmtNum(r.cpfPayout),fmtNum(r.oaWdrawMth),fmtNum(r.cWdrawMth),fmtNum(r.mIncome),fmtNum(r.nw)
+    fmtNum(r.loanMth),fmtNum(r.cpfPayout),fmtNum(r.oaWdrawMth),fmtNum(r.cWdrawMth),fmtNum(r.mIncome),fmtNum(r.realMIncome),fmtNum(r.nw)
   ].join(',')));
   lines.push('','SUMMARY');
   lines.push(`CPF LIFE Monthly Payout,${fmtNum(lastCpfLifePayout)}`);
