@@ -382,9 +382,12 @@ function simulateTo55() {
   const getOAR = (age) => age<60?0.24:age<65?0.185:age<70?0.105:0.075;
   for (let age = currentAge; age < 55; age++) {
     const working = salary > 0 && age < retireAge;
-    sa = sa * (1 + raR);
+    // SA: tiered interest (matches calculate())
+    sa = sa + Math.min(sa,30000)*(raR+0.02) + Math.max(Math.min(sa,60000)-30000,0)*(raR+0.01) + Math.max(sa-60000,0)*raR;
+    // OA: contributions first, then tiered interest (matches calculate())
     const oaCon = working ? salary * 12 * getOAR(age) : 0;
-    oa = oa * (1 + oaR) + oaCon;
+    const oaBase = oa + oaCon;
+    oa = oaBase + Math.min(oaBase,20000)*(oaR+0.01) + Math.max(oaBase-20000,0)*oaR;
     if (working) salary *= 1.03;
   }
   return { sa55: sa, oa55: oa };
