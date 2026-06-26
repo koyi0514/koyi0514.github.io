@@ -361,12 +361,37 @@ function getProjectedFRS() {
 }
 
 // ── RA SLIDER + INPUT SYNC ──
-function updateRASlider() {
-  const sa = parseFloat(document.getElementById('currentSA').value) || 0;
-  const oa = parseFloat(document.getElementById('currentOA').value) || 0;
-  const currentAge = parseFloat(document.getElementById('currentAge').value) || 54;
+let _raTotal = 0, _raMin = 0, _raMax = 0;
+
+function simulateTo55() {
+  // Simulate pre-55 years to get accurate SA+OA at age 55
+  // Matches exactly what calculate() will compute
+  const currentAge = parseInt(document.getElementById('currentAge').value) || 54;
+  if (currentAge >= 55) {
+    return {
+      sa55: parseFloat(document.getElementById('currentSA').value) || 0,
+      oa55: parseFloat(document.getElementById('currentOA').value) || 0
+    };
+  }
+  let sa = parseFloat(document.getElementById('currentSA').value) || 0;
+  let oa = parseFloat(document.getElementById('currentOA').value) || 0;
+  let salary = parseFloat(document.getElementById('currentSalary').value) || 0;
+  const retireAge = parseInt(document.getElementById('retireAge').value) || 55;
   const raR = (parseFloat(document.getElementById('raRate').value) || 4) / 100;
   const oaR = (parseFloat(document.getElementById('oaRate').value) || 2.5) / 100;
+  const getOAR = (age) => age<60?0.24:age<65?0.185:age<70?0.105:0.075;
+  for (let age = currentAge; age < 55; age++) {
+    const working = salary > 0 && age < retireAge;
+    sa = sa * (1 + raR);
+    const oaCon = working ? salary * 12 * getOAR(age) : 0;
+    oa = oa * (1 + oaR) + oaCon;
+    if (working) salary *= 1.03;
+  }
+  return { sa55: sa, oa55: oa };
+}
+
+function updateRASlider() {
+  const currentAge = parseInt(document.getElementById('currentAge').value) || 54;
   const frs = getProjectedFRS();
   const ers = frs * 2;
 
@@ -374,53 +399,48 @@ function updateRASlider() {
   document.getElementById('ersAt55').textContent = fmt(ers);
   document.getElementById('brsAt55').textContent = fmt(frs / 2);
 
-  const yrs = Math.max(0, 55 - currentAge);
-  _raTotal = sa * Math.pow(1+raR,yrs) + oa * Math.pow(1+oaR,yrs);
-  _raMin = Math.min(frs, _raTotal);
-  _raMax = Math.min(ers, _raTotal);
-
   const raBox = document.getElementById('raBox');
   const msgEl = document.getElementById('raEligibilityMsg');
 
-  // If already 55+, allow free RA input — no FRS/ERS constraint
   if (currentAge >= 55) {
+    const sa = parseFloat(document.getElementById('currentSA').value) || 0;
+    const oa = parseFloat(document.getElementById('currentOA').value) || 0;
     _raTotal = sa + oa;
-    _raMin = 0;         // free input — no minimum enforced
-    _raMax = _raTotal;  // cannot exceed total SA+OA
+    _raMin = 0;
+    _raMax = _raTotal;
     msgEl.innerHTML = `Current SA+OA: <span style="color:var(--accent);font-family:'DM Mono',monospace">${fmt(_raTotal)}</span> — enter your actual RA allocation below:`;
     raBox.classList.add('visible');
-    document.getElementById('raInfo').innerHTML = `Defaulted to your SA value (your RA at 55). Adjust if needed. Max is ${fmt(_raTotal)} (full SA+OA).`;
+    document.getElementById('raInfo').innerHTML = `Defaulted to your SA value. Adjust if needed. Max: ${fmt(_raTotal)} (full SA+OA).`;
     document.getElementById('raMinLabel').textContent = `Min: $0`;
     document.getElementById('raMaxLabel').textContent = `Max (SA+OA): ${fmt(_raTotal)}`;
     const sl = document.getElementById('raSlider');
     sl.min = 0; sl.max = _raTotal; sl.step = 1;
-    // Default to SA value — this represents what was locked into RA at age 55
     const cur = parseFloat(document.getElementById('raInput').value);
-    if (isNaN(cur) || cur < 0 || cur > _raTotal) setRAValue(sa); // default = SA
+    if (isNaN(cur) || cur < 0 || cur > _raTotal) setRAValue(sa);
     else setRAValue(cur);
-    return; // skip normal FRS/ERS logic below
+    return;
   }
 
+  // Simulate to get accurate SA+OA at 55 (same as calculate())
+  const { sa55, oa55 } = simulateTo55();
+  _raTotal = sa55 + oa55;
+  _raMin = Math.min(frs, _raTotal);
+  _raMax = Math.min(ers, _raTotal);
+
   if (_raTotal <= frs) {
-    msgEl.innerHTML = `<span style="color:var(--accent4)">✓</span> Projected SA+OA at 55 (<span style="color:var(--accent);font-family:'DM Mono',monospace">${fmt(_raTotal)}</span>) ≤ FRS — full amount goes to RA automatically.`;
+    msgEl.innerHTML = `<span style="color:var(--accent4)">✓</span> Projected SA+OA at 55: <span style="color:var(--accent);font-family:'DM Mono',monospace">${fmt(_raTotal)}</span> ≤ FRS — full amount goes to RA automatically.`;
     raBox.classList.remove('visible');
   } else {
-    const label = 'Projected SA+OA at 55';
-    msgEl.innerHTML = `${label}: <span style="color:var(--accent);font-family:'DM Mono',monospace">${fmt(_raTotal)}</span> — exceeds FRS. Set RA allocation:`;
+    msgEl.innerHTML = `Projected SA+OA at 55: <span style="color:var(--accent);font-family:'DM Mono',monospace">${fmt(_raTotal)}</span> — exceeds FRS. Set RA allocation:`;
     raBox.classList.add('visible');
-    const raLabel = currentAge >= 55 ? `Current age ${currentAge}` : 'Age 55';
-    document.getElementById('raInfo').innerHTML = `Set RA allocation at ${raLabel} — between FRS and ERS:`;
-    const sl = document.getElementById('raSlider');
-    sl.min = _raMin; sl.max = _raMax; sl.step = 1;
+    document.getElementById('raInfo').innerHTML = `Set RA allocation at age 55 — between FRS (min) and ERS (max):`;
     document.getElementById('raMinLabel').textContent = `FRS min: ${fmt(_raMin)}`;
     document.getElementById('raMaxLabel').textContent = `ERS max: ${fmt(_raMax)}`;
-    // Only reset if current value is out of range
+    const sl = document.getElementById('raSlider');
+    sl.min = _raMin; sl.max = _raMax; sl.step = 1;
     const cur = parseFloat(document.getElementById('raInput').value);
-    if (isNaN(cur) || cur < _raMin || cur > _raMax) {
-      setRAValue(_raMax);
-    } else {
-      setRAValue(cur);
-    }
+    if (isNaN(cur) || cur < _raMin || cur > _raMax) setRAValue(_raMax);
+    else setRAValue(cur);
   }
 }
 
